@@ -1,26 +1,30 @@
 @import "tailwindcss";
 
+/*
+  Placeholder palette for the layout shell (Day 2).
+  Minimal rule: 1 font, 2–3 colors. Swap these values for the approved
+  style-guide colors on Day 3 — every component reads from these tokens,
+  so nothing else needs to change.
+*/
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111111;
+  --muted: #5f6368; /* secondary text, ~6:1 contrast on white */
+  --line: #e6e6e6; /* hairline borders */
+  --accent: #2b59c3; /* reserved for buttons/links on Day 3 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
