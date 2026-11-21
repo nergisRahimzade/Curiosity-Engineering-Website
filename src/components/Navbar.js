@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import NavLinks, { NavLinkList } from "@/components/NavLinks";
 import MobileMenu from "@/components/MobileMenu";
+import Container from "@/components/Container";
 import { site } from "@/lib/site";
 
 // With cacheComponents on, usePathname() suspends on dynamic routes that
@@ -11,7 +12,7 @@ import { site } from "@/lib/site";
 export default function Navbar() {
   return (
     <header className="relative border-b border-line">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+      <Container className="flex h-16 items-center justify-between">
         <Link href="/" className="text-sm font-semibold tracking-tight">
           {site.shortName}
         </Link>
@@ -25,7 +26,7 @@ export default function Navbar() {
         <Suspense fallback={null}>
           <MobileMenu />
         </Suspense>
-      </div>
+      </Container>
     </header>
   );
 }

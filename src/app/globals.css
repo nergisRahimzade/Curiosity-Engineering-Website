@@ -1,17 +1,24 @@
 @import "tailwindcss";
 
 /*
-  Placeholder palette for the layout shell (Day 2).
-  Minimal rule: 1 font, 2–3 colors. Swap these values for the approved
-  style-guide colors on Day 3 — every component reads from these tokens,
-  so nothing else needs to change.
+  Site palette. Minimal rule: 1 font, 2–3 colors.
+  The three colors are foreground (text), background (white) and accent
+  (the one action color). muted, line and accent-hover are tints of
+  those, not extra colors.
+
+  STILL PLACEHOLDERS: the approved style guide isn't in the repo yet.
+  When design hands it over, change the hex values below and nothing
+  else; Button, Card, Container, navbar and footer all read from here.
+  If you change accent, keep white text on it at 4.5:1 contrast or more.
 */
 :root {
   --background: #ffffff;
   --foreground: #111111;
   --muted: #5f6368; /* secondary text, ~6:1 contrast on white */
   --line: #e6e6e6; /* hairline borders */
-  --accent: #2b59c3; /* reserved for buttons/links on Day 3 */
+  --accent: #2b59c3; /* primary buttons, focus rings; 6.1:1 on white */
+  --accent-hover: #22479c;
+  --on-accent: #ffffff; /* text on accent backgrounds */
 }
 
 @theme inline {
@@ -20,6 +27,8 @@
   --color-muted: var(--muted);
   --color-line: var(--line);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
   --font-sans: var(--font-geist-sans);
 }
 
