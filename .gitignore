@@ -30,8 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# W1D1-BE keeps local credentials private and tracks the root template.
 .env*
+!/.env.example
 
 # vercel
 .vercel
