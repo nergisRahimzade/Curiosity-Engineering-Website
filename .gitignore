@@ -34,9 +34,9 @@ yarn-error.log*
 .env*
 !/.env.example
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# W1D2-BE: Prisma rebuilds this folder from the schema (npx prisma generate)
+/src/generated/prisma

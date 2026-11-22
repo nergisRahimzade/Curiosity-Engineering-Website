@@ -1,25 +1,16 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { sampleProjects } from "@/lib/sample-projects";
 
-// Reads projects from Supabase for the public pages.
+// Project data for the public pages.
 //
-// Talks to Supabase's REST API with fetch, so the site needs no extra
-// package for public reads. Row Level Security decides what the public
-// key can see; this file never uses the service-role key.
-//
-// Env vars (in .env.local and on Vercel):
-//   NEXT_PUBLIC_SUPABASE_URL           https://<project>.supabase.co
-//   NEXT_PUBLIC_SUPABASE_ANON_KEY      or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-//
-// With neither set, the page shows sample projects and says so, so the
-// frontend can be worked on without database keys.
+// The plan stores projects in Azure PostgreSQL, read through Prisma
+// (src/lib/db.js, added in W1D2-BE). The schema and the projects API
+// arrive in W1D3 and W3D1, so until then this file serves the sample
+// projects. When W3D1 lands, replace the body of getProjects() with a
+// prisma.projects query and delete sample-projects.js.
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_KEY);
+// The page shows a visible notice while this is true.
+export const isUsingSampleData = true;
 
 // Cache tag for project data. When the admin forms land (Day 12), call
 // revalidateTag("projects") after a create, edit or delete so the list
@@ -66,28 +57,12 @@ function byNewest(a, b) {
   return tb - ta;
 }
 
-// All projects, newest first. Throws if Supabase answers with an error,
-// so the page can show a message instead of a misleading empty state.
+// All projects, newest first. Once the database is used, let errors
+// throw so the page can show a message instead of a misleading empty state.
 export async function getProjects() {
   "use cache";
   cacheLife("minutes");
   cacheTag(PROJECTS_TAG);
 
-  if (!isSupabaseConfigured) {
-    return sampleProjects.map(toProject).sort(byNewest);
-  }
-
-  // select=* keeps this working while the table's columns settle.
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/projects?select=*`, {
-    headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
-  });
-
-  if (!res.ok) {
-    throw new Error(
-      `Supabase returned ${res.status} for projects: ${await res.text()}`,
-    );
-  }
-
-  const rows = await res.json();
-  return rows.map(toProject).sort(byNewest);
+  return sampleProjects.map(toProject).sort(byNewest);
 }
