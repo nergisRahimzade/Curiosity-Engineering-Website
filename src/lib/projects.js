@@ -7,7 +7,8 @@ import { sampleProjects } from "@/lib/sample-projects";
 // (src/lib/db.js, added in W1D2-BE). The schema and the projects API
 // arrive in W1D3 and W3D1, so until then this file serves the sample
 // projects. When W3D1 lands, replace the body of getProjects() with a
-// prisma.projects query and delete sample-projects.js.
+// prisma.project query and delete sample-projects.js. Prisma returns
+// camelCase fields (startDate, imageUrl), so update toProject() too.
 
 // The page shows a visible notice while this is true.
 export const isUsingSampleData = true;

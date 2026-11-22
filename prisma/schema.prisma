@@ -11,3 +11,77 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// W1D3-BE: Member accounts and project records before the first migration.
+enum UserRole {
+  member
+  officer
+
+  @@map("user_role")
+}
+
+// The same person can be a lead on one project and a member on another.
+enum ProjectRole {
+  member
+  lead
+
+  @@map("project_role")
+}
+
+model User {
+  id           Int             @id @default(autoincrement())
+  name         String
+  email        String          @unique
+  passwordHash String          @map("password_hash")
+  role         UserRole        @default(member)
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  memberships  ProjectMember[]
+
+  @@map("users")
+}
+
+model Project {
+  id        Int       @id @default(autoincrement())
+  title     String
+  summary   String
+  status    String
+  imageUrl  String?   @map("image_url")
+  startDate DateTime? @map("start_date") @db.Date
+  endDate   DateTime? @map("end_date") @db.Date
+
+  // New projects start private. Archiving keeps their history.
+  isPublic Boolean @default(false) @map("is_public")
+  archived Boolean @default(false)
+
+  members  ProjectMember[]
+  overview ProjectOverview?
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  projectId   Int         @map("project_id")
+  userId      Int         @map("user_id")
+  projectRole ProjectRole @default(member) @map("project_role")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // The same user can join a project once. The user index helps list their projects.
+  @@id([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+model ProjectOverview {
+  // Using the project ID as the key gives each project at most one overview.
+  projectId   Int     @id @map("project_id")
+  goals       String?
+  plan        String?
+  budgetNotes String? @map("budget_notes")
+  risks       String?
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  @@map("project_overviews")
+}
