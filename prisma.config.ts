@@ -9,6 +9,9 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    // W1D5-BE: `npx prisma db seed` runs this. The flag hides a harmless Node
+    // warning about loading Prisma's generated .ts client from plain JavaScript.
+    seed: "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON prisma/seed.mjs",
   },
   datasource: {
     url: process.env["DATABASE_URL"],
