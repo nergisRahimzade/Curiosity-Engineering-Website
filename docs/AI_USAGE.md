@@ -28,3 +28,4 @@ Both follow the same rules in [`AGENTS.md`](../AGENTS.md).
 | 2026-11-22 | PR #9 | Codex | Reviewed and clarified the planned Azure deployment and the branch approval and bypass guidance |
 | 2026-11-22 | `W1D3-BE` | Codex | Defined the first four Prisma models, validated the schema and generated SQL offline, and wrote the backend handoff |
 | 2026-11-22 | `W1D4-BE` | Claude Code | Defined the five schema part 2 models, checked them with Prisma validate/generate and an offline SQL diff, and wrote the backend handoff |
+| 2026-11-22 | `setup/frontend-plan-alignment` | Claude Code | Compared the D01–D03 frontend with the new plan, moved pages to the plan's routes and route groups, fixed the accessibility gaps, turned on the jsx-a11y lint rules, wrote the handoff |
