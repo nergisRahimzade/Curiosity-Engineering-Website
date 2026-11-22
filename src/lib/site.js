@@ -1,6 +1,8 @@
 // Single source of truth for the site name and the main routes.
 // The navbar, footer and page titles all read from here, so adding a
 // route later is a one-line change.
+// Routes follow docs/plan/architecture.md ("Pages and routes"), updated in
+// setup/frontend-plan-alignment.
 
 export const site = {
   name: "Curiosity Engineering Club",
@@ -9,13 +11,17 @@ export const site = {
     "Projects, events and membership for the Curiosity Engineering Club.",
 };
 
-// Public routes shown in the navbar. Admin is kept out of the main nav
-// (officers reach it directly or from the footer).
+// Public routes shown in the navbar. "Join" is the plan's /register page.
+// Member and officer links are added by role in W2D5-FE (Navbar reads
+// /api/auth/me), so none are listed here.
 export const navLinks = [
   { href: "/", label: "Home" },
   { href: "/projects", label: "Projects" },
+  { href: "/activities", label: "Activities" },
   { href: "/calendar", label: "Calendar" },
-  { href: "/join", label: "Join" },
+  { href: "/register", label: "Join" },
 ];
 
-export const footerLinks = [...navLinks, { href: "/admin", label: "Admin" }];
+// The footer adds "Log in". Officers reach /officer after logging in, so
+// there's no public link to it.
+export const footerLinks = [...navLinks, { href: "/login", label: "Log in" }];
