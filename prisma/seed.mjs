@@ -9,7 +9,9 @@
 // can run .ts files directly.
 //
 // Safe to run more than once: every step looks for an existing row first, so a
-// second run doesn't create duplicates.
+// second run doesn't create duplicates. If an officer already exists, it's
+// reused, so later runs (for example, just to add sample data) don't need
+// SEED_OFFICER_PASSWORD.
 
 import "dotenv/config";
 import bcrypt from "bcrypt";
@@ -40,7 +42,11 @@ async function loadPrismaClient() {
           'Check with: node -p "process.features.typescript"  (it should print "strip").',
       );
     }
-    if (error.code === "ERR_MODULE_NOT_FOUND") {
+    // Only when the generated client file itself is missing. A package missing
+    // *inside* the client (say, after a partial `npm ci`) is a different problem,
+    // so it falls through and keeps its full error.
+    const clientFileMissing = /Cannot find module '[^']*generated[\\/]prisma[\\/]client\.ts'/.test(error.message);
+    if (error.code === "ERR_MODULE_NOT_FOUND" && clientFileMissing) {
       throw new SetupError("Prisma's client hasn't been generated yet. Run `npx prisma generate`, then seed again.");
     }
     throw error;
@@ -61,23 +67,43 @@ async function seedFirstOfficer() {
   const email = process.env.SEED_OFFICER_EMAIL?.trim().toLowerCase();
   const password = process.env.SEED_OFFICER_PASSWORD;
 
-  // The officer's details live in .env, never in this file, so no real
-  // person's email or password is committed to GitHub.
+  // The seed only ever creates the *first* officer. If one exists, reuse it:
+  // more officers are added by promoting members (officer members page, W5D4),
+  // which re-checks permissions. So no password is needed on later runs.
+  const existingOfficer = await prisma.user.findFirst({
+    where: { role: "officer" },
+    orderBy: { id: "asc" },
+  });
+  if (existingOfficer) {
+    console.log(`An officer already exists: ${existingOfficer.email} (id ${existingOfficer.id}). Not creating another one.`);
+    if (email && email !== existingOfficer.email) {
+      console.log("SEED_OFFICER_EMAIL is ignored: promote members to officer from the officer members page instead.");
+    }
+    return existingOfficer;
+  }
+
+  // No officer yet, so we need their details. They live in .env, never in
+  // this file, so no real person's email or password is committed to GitHub.
   if (!name || !email || !password) {
     throw new SetupError(
-      "Set SEED_OFFICER_NAME, SEED_OFFICER_EMAIL and SEED_OFFICER_PASSWORD in .env first (see .env.example).",
+      "No officer exists yet. Set SEED_OFFICER_NAME, SEED_OFFICER_EMAIL and SEED_OFFICER_PASSWORD in .env first (see .env.example).",
     );
   }
   if (password.length < 12) {
     throw new SetupError("SEED_OFFICER_PASSWORD must be at least 12 characters.");
   }
 
-  // upsert = "update if it exists, otherwise create". update is empty on
-  // purpose: re-running the seed never overwrites an existing account.
-  const officer = await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: {
+  // Never turn an existing member into an officer here: that would skip the
+  // role-change flow. Stop and let the person pick a different email.
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    throw new SetupError(
+      `${email} already belongs to a member account (id ${existingUser.id}). Use a different SEED_OFFICER_EMAIL for the first officer.`,
+    );
+  }
+
+  const officer = await prisma.user.create({
+    data: {
       name,
       email,
       // Store only the bcrypt hash, never the password itself.
@@ -86,7 +112,7 @@ async function seedFirstOfficer() {
     },
   });
 
-  console.log(`First officer ready: ${officer.email} (id ${officer.id})`);
+  console.log(`First officer created: ${officer.email} (id ${officer.id})`);
   return officer;
 }
 
@@ -94,6 +120,11 @@ async function seedFirstOfficer() {
 // 2. Sample data (opt-in with SEED_SAMPLE_DATA=true, so seeding the production
 //    database in W6D3 creates only the first officer by default)
 // ---------------------------------------------------------------------------
+
+// Every sample title ends in "(sample)". That makes sample rows obvious on the
+// pages, and it means findOrCreate below can never match (and attach sample
+// data to) a real project or event that happens to have the same name.
+const sample = (text) => `${text} (sample)`;
 
 // For tables without a unique column (projects, events...), find a row by a
 // field like its title, and create it only if it's missing.
@@ -106,9 +137,9 @@ async function seedSampleData(officer) {
   // Projects. Status is free text until the team agrees on values (W1D3 handoff).
   const robot = await findOrCreate(
     prisma.project,
-    { title: "Line-Following Robot" },
+    { title: sample("Line-Following Robot") },
     {
-      title: "Line-Following Robot",
+      title: sample("Line-Following Robot"),
       summary: "A small robot that follows a black line using infrared sensors.",
       status: "completed",
       startDate: new Date("2026-09-08"),
@@ -119,9 +150,9 @@ async function seedSampleData(officer) {
 
   const weather = await findOrCreate(
     prisma.project,
-    { title: "Campus Weather Station" },
+    { title: sample("Campus Weather Station") },
     {
-      title: "Campus Weather Station",
+      title: sample("Campus Weather Station"),
       summary: "Sensors on the engineering building roof that log temperature and wind.",
       status: "active",
       startDate: new Date("2026-10-01"),
@@ -131,9 +162,9 @@ async function seedSampleData(officer) {
 
   const website = await findOrCreate(
     prisma.project,
-    { title: "Club Website" },
+    { title: sample("Club Website") },
     {
-      title: "Club Website",
+      title: sample("Club Website"),
       summary: "This website: projects, calendar and officer tools.",
       status: "active",
       startDate: new Date("2026-11-16"),
@@ -161,12 +192,21 @@ async function seedSampleData(officer) {
     },
   });
 
+  // The officer is also a regular member of the website project, so the task
+  // below is assigned to someone on that project (tasks are for project members,
+  // and show on /projects/[id]/tasks for "a project I'm on").
+  await prisma.projectMember.upsert({
+    where: { projectId_userId: { projectId: website.id, userId: officer.id } },
+    update: {},
+    create: { projectId: website.id, userId: officer.id, projectRole: "member" },
+  });
+
   await findOrCreate(
     prisma.task,
-    { title: "Write the setup guide", projectId: website.id },
+    { title: sample("Write the setup guide"), projectId: website.id },
     {
       projectId: website.id,
-      title: "Write the setup guide",
+      title: sample("Write the setup guide"),
       description: "Steps for a new teammate to run the site locally.",
       status: "todo",
       dueDate: new Date("2026-12-11"),
@@ -179,9 +219,9 @@ async function seedSampleData(officer) {
   // time (-08:00); Postgres stores them in UTC, as the data rules require.
   const generalMeeting = await findOrCreate(
     prisma.event,
-    { title: "Winter General Meeting" },
+    { title: sample("Winter General Meeting") },
     {
-      title: "Winter General Meeting",
+      title: sample("Winter General Meeting"),
       type: "general_meeting",
       startsAt: new Date("2026-12-02T18:00:00-08:00"),
       endsAt: new Date("2026-12-02T19:00:00-08:00"),
@@ -191,9 +231,9 @@ async function seedSampleData(officer) {
 
   await findOrCreate(
     prisma.event,
-    { title: "Weather Station Check-in" },
+    { title: sample("Weather Station Check-in") },
     {
-      title: "Weather Station Check-in",
+      title: sample("Weather Station Check-in"),
       type: "project_meeting",
       startsAt: new Date("2026-12-04T16:00:00-08:00"),
       endsAt: new Date("2026-12-04T17:00:00-08:00"),
@@ -204,9 +244,9 @@ async function seedSampleData(officer) {
 
   await findOrCreate(
     prisma.event,
-    { title: "Regional Robotics Challenge" },
+    { title: sample("Regional Robotics Challenge") },
     {
-      title: "Regional Robotics Challenge",
+      title: sample("Regional Robotics Challenge"),
       type: "competition",
       startsAt: new Date("2027-01-23T09:00:00-08:00"),
       endsAt: new Date("2027-01-23T17:00:00-08:00"),
@@ -216,9 +256,9 @@ async function seedSampleData(officer) {
 
   await findOrCreate(
     prisma.event,
-    { title: "Student Engineering Conference" },
+    { title: sample("Student Engineering Conference") },
     {
-      title: "Student Engineering Conference",
+      title: sample("Student Engineering Conference"),
       type: "conference",
       startsAt: new Date("2027-02-12T09:00:00-08:00"),
       endsAt: new Date("2027-02-13T16:00:00-08:00"),
@@ -232,7 +272,7 @@ async function seedSampleData(officer) {
     update: {},
     create: {
       eventId: generalMeeting.id,
-      title: "Winter General Meeting RSVP",
+      title: sample("Winter General Meeting RSVP"),
       questions: [
         { label: "Will you attend?", type: "choice", options: ["Going", "Not going"] },
         { label: "Dietary needs?", type: "text" },
@@ -244,9 +284,9 @@ async function seedSampleData(officer) {
   // Past activities.
   await findOrCreate(
     prisma.activity,
-    { title: "Soldering Workshop" },
+    { title: sample("Soldering Workshop") },
     {
-      title: "Soldering Workshop",
+      title: sample("Soldering Workshop"),
       description: "Members learned to solder by building a small LED badge.",
       date: new Date("2026-10-15"),
     },
@@ -254,15 +294,17 @@ async function seedSampleData(officer) {
 
   await findOrCreate(
     prisma.activity,
-    { title: "Robot Demo Day" },
+    { title: sample("Robot Demo Day") },
     {
-      title: "Robot Demo Day",
+      title: sample("Robot Demo Day"),
       description: "The line-following robot ran laps for visitors at the campus fair.",
       date: new Date("2026-11-14"),
     },
   );
 
   // Budget for the term, and one expense against it. Money is in whole cents.
+  // The term label stays "2026-fall" (no suffix) because it names a real term;
+  // update is empty, so a real budget for that term is never changed.
   await prisma.budget.upsert({
     where: { term: "2026-fall" },
     update: {},
@@ -271,12 +313,12 @@ async function seedSampleData(officer) {
 
   await findOrCreate(
     prisma.expense,
-    { description: "Infrared sensors for the line-following robot" },
+    { description: sample("Infrared sensors for the line-following robot") },
     {
       date: new Date("2026-09-20"),
       amountCents: 4599, // $45.99
       category: "parts",
-      description: "Infrared sensors for the line-following robot",
+      description: sample("Infrared sensors for the line-following robot"),
       projectId: robot.id,
       recordedById: officer.id,
     },
@@ -288,13 +330,22 @@ async function seedSampleData(officer) {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // Without DATABASE_URL the pg driver silently falls back to a local Postgres
+  // (localhost:5432) and would seed *that* while reporting success. Stop first.
+  if (!process.env.DATABASE_URL?.trim()) {
+    throw new SetupError("Set DATABASE_URL in .env first (see .env.example).");
+  }
+
   prisma = await loadPrismaClient();
   const officer = await seedFirstOfficer();
 
   // Sample data is opt-in: forgetting the setting is then the safe mistake.
   // Production never gets sample data, even if the setting is left on.
-  const wantsSampleData = process.env.SEED_SAMPLE_DATA === "true";
-  if (!wantsSampleData || process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production") {
+    console.log("NODE_ENV is production: sample data is never added here.");
+    return;
+  }
+  if (process.env.SEED_SAMPLE_DATA !== "true") {
     console.log("Skipping sample data (set SEED_SAMPLE_DATA=true in .env to add it).");
     return;
   }
