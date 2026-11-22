@@ -1,0 +1,13 @@
+// W1D2-BE: Prisma schema for the club database (Azure PostgreSQL).
+// Tables are added in W1D3 (part 1), W1D4 (part 2) and W1D5 (part 3).
+// The connection URL is set in prisma.config.ts, which reads DATABASE_URL from .env.
+// Change tables only through Prisma migrations, committed with the task.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

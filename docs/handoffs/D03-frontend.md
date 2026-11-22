@@ -52,7 +52,7 @@ import Container from "@/components/Container";
 </Container>
 ```
 
-`media` takes any element. A plain `<img>` is simplest. To use `next/image` with Supabase Storage URLs, add the Storage host to `images.remotePatterns` in `next.config.mjs` first.
+`media` takes any element. A plain `<img>` is simplest. To use `next/image` with Azure Blob Storage URLs (Supabase is no longer used), add the Storage host to `images.remotePatterns` in `next.config.mjs` first.
 
 ## Things the next person should know
 

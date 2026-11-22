@@ -1,6 +1,6 @@
-// Stand-in rows, shaped like the Supabase `projects` table, used only
-// when the Supabase env vars aren't set (see src/lib/projects.js).
-// Delete this file once every machine that builds the site has the keys.
+// Stand-in rows for the `projects` table, used by src/lib/projects.js
+// until the Prisma schema and projects API exist (W1D3 and W3D1).
+// Delete this file once getProjects() reads from the database.
 
 export const sampleProjects = [
   {

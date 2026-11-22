@@ -38,16 +38,26 @@ team are beginners learning as they build, so code and explanations are written 
 - `src/app/`: routes `/`, `/projects`, `/calendar`, `/join`, `/admin`, `/styleguide` (hidden), 404.
   Not yet using the plan's route groups (`(public)`, `(member)`, `officer/`).
 - `src/components/`: `Navbar`, `Footer`, `Button`, `Card`, `Container`, `projects/ProjectGrid`.
-- `src/lib/site.js` (routes + site name), `src/lib/projects.js` (project data), `sample-projects.js`.
+- `src/lib/site.js` (routes + site name), `src/lib/projects.js` (project data, sample data for now), `sample-projects.js`.
 - `docs/handoffs/`: one note per finished task. Read the newest ones for your layer first.
-- **Not built yet:** API routes, Prisma, auth, tests, CI, `.env.example`.
+- `.env.example` (root): names of the env variables, no values. Real values go in the ignored `.env`.
+- Prisma 7 (W1D2-BE): `prisma/schema.prisma` (no tables yet), `prisma.config.ts`, shared client in
+  `src/lib/db.js`. The client is generated into `src/generated/prisma/` (git-ignored; run
+  `npx prisma generate` after cloning or changing the schema).
+- `docs/setup/azure-database.md`: how the development database on Azure is created.
+- **Not built yet:** tables, API routes, auth, tests, CI.
+
+## Decisions settled by the project lead (Nergis, Nov 21, 2026)
+
+- **Database:** Azure PostgreSQL + Prisma only. Supabase is not used. `src/lib/projects.js` serves
+  sample data until the Prisma schema and projects API exist (W1D3, W3D1).
+- **Hosting:** Azure App Service. Vercel is not used. The D02–D04 handoffs mention Supabase and
+  Vercel because they predate this decision.
 
 ## Known conflicts: ask the project lead (Nergis), don't settle them in code
 
-1. **Database:** the plan says Azure Postgres + Prisma. `src/lib/projects.js` (D04) reads **Supabase**.
-2. **Hosting:** the plan says Azure App Service. The D02–D04 handoffs and comments say **Vercel**.
-3. **Day numbers:** the D02–D04 frontend handoffs follow an older plan. New work uses `W#D#` IDs (below).
-4. **Routes:** the current `/join` and `/admin` vs the plan's `/register`, `/login`, `/officer/*`.
+1. **Day numbers:** the D02–D04 frontend handoffs follow an older plan. New work uses `W#D#` IDs (below).
+2. **Routes:** the current `/join` and `/admin` vs the plan's `/register`, `/login`, `/officer/*`.
 
 ## Backend rules (from the architecture doc)
 

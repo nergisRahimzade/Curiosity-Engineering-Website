@@ -1,5 +1,8 @@
 # Handoff — Day 4 Frontend: Projects list page
 
+> **Superseded (Nov 21, 2026):** the project now uses Azure PostgreSQL + Prisma and Azure App Service.
+> Supabase and Vercel, mentioned below, are no longer used. `/projects` shows sample data until W3D1-BE.
+
 **Branch:** `D04` (from `main` @ `263c515`, which already includes D03)
 **Plan task:** "Projects list page: fetch and show project cards"
 

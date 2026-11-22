@@ -27,7 +27,7 @@
 - `npm run lint`: passes with 0 problems.
 - `npm run build` (Turbopack): passes. All 6 routes prerender as static.
 - Tested in a browser: every route returns 200 and an unknown path returns 404. The active link and page titles are correct. The mobile menu opens, navigates and closes, with no console errors.
-- The repo has no test suite and no GitHub Actions workflow yet, so lint and build are the checks that apply here (they're also what Vercel runs).
+- The repo has no test suite and no GitHub Actions workflow yet, so lint and build are the checks that apply here (Vercel is no longer used; hosting is Azure App Service).
 
 ## Next up (Day 3 frontend)
 

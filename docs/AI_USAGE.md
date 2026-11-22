@@ -24,3 +24,4 @@ Both follow the same rules in [`AGENTS.md`](../AGENTS.md).
 | Date | Branch / PR | Tool | What it helped with |
 | --- | --- | --- | --- |
 | 2026-11-21 | `setup/agent-docs` | Claude Code | Wrote `AGENTS.md`/`CLAUDE.md`, the PR and handoff templates, and Markdown copies of the plan PDFs |
+| 2026-11-21 | `W1D2-BE` | Claude Code | Removed Supabase/Vercel code and config, wrote the Azure database guide and `src/lib/db.js`, reviewed the Prisma setup, wrote the handoff |

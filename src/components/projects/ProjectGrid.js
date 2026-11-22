@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
-import { getProjects, isSupabaseConfigured } from "@/lib/projects";
+import { getProjects, isUsingSampleData } from "@/lib/projects";
 
 const gridClass = "grid gap-6 sm:grid-cols-2 lg:grid-cols-3";
 
@@ -24,7 +24,7 @@ export default async function ProjectGrid() {
 
   return (
     <>
-      {!isSupabaseConfigured && <SampleDataNotice />}
+      {isUsingSampleData && <SampleDataNotice />}
       <ul className={gridClass}>
         {projects.map((p, i) => (
           <li key={p.id}>
@@ -80,8 +80,7 @@ function ProjectCard({ project: p, showMedia, priority }) {
   );
 }
 
-// "No projects yet" state. Shown when the table has no rows the public
-// can see (or RLS hides them all).
+// "No projects yet" state. Shown when no public projects exist.
 export function ProjectsEmpty() {
   return (
     <div className="rounded-lg border border-dashed border-line px-6 py-16 text-center">
@@ -116,13 +115,13 @@ function ProjectsError() {
   );
 }
 
-// Visible on purpose: if this ever shows on the live site, the Supabase
-// env vars are missing on Vercel.
+// Visible on purpose, so nobody mistakes sample data for real projects.
+// Remove it when getProjects() reads from the database (W3D1-BE).
 function SampleDataNotice() {
   return (
     <p className="mb-6 rounded-md border border-line px-4 py-3 text-sm text-muted">
-      Showing sample projects. Add the Supabase URL and key to{" "}
-      <code className="text-foreground">.env.local</code> to load real ones.
+      Showing sample projects. Real projects will load from the club
+      database once it is connected.
     </p>
   );
 }

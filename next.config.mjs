@@ -1,22 +1,10 @@
-// Project photos live in Supabase Storage. next/image only loads remote
-// images from hosts listed here, so allow the project's public bucket.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL)
-  : null;
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    remotePatterns: supabaseUrl
-      ? [
-          {
-            protocol: supabaseUrl.protocol.replace(":", ""),
-            hostname: supabaseUrl.hostname,
-            port: supabaseUrl.port,
-            pathname: "/storage/v1/object/public/**",
-          },
-        ]
-      : [],
+    // Project photos will live in Azure Blob Storage (W3D3-BE). next/image
+    // only loads remote images from hosts listed here, so add the storage
+    // account's host (<account>.blob.core.windows.net) in that task.
+    remotePatterns: [],
   },
   experimental: {
     agentFeedback: true,
