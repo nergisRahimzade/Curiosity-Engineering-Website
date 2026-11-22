@@ -21,7 +21,8 @@
 
 ## Branch rule for `main`
 
-**What the plan says** (architecture, "Deploys"; page 14 of `docs/plan/architecture.pdf`): "Teammates work on branches and open pull requests; the project lead reviews before merging." A push to `main` also deploys to Azure, so nobody should push to it directly.
+**What the plan says** (architecture, "Deploys"; page 14 of `docs/plan/architecture.pdf`): "Teammates work on branches and open pull requests; the project lead reviews before merging." The plan calls for pushes to `main` to deploy to Azure once W6D2
+sets up the GitHub Actions workflow.
 
 **What GitHub enforces** (ruleset "Protect Main Branch", active, checked Nov 22, 2026):
 
@@ -30,11 +31,19 @@
 - Required approving reviews: **0**.
 - Required status checks: none yet. They can be added once CI exists.
 
-**Gap:** with 0 required approvals, any teammate with push access can merge their own pull request without the project lead's review. That review is the step the plan asks for. GitHub doesn't let people approve their own pull requests. So the usual setup is: require **1** approval, and add the repository admin (Nergis) to the ruleset's bypass list, so she can still merge her own PRs. Only an admin can change the ruleset.
+**Gap:** With zero required approvals, a teammate with merge access can merge their own pull
+request without the project lead's review. Requiring **1** approval would enforce review by
+another eligible teammate. Enforcing project-lead approval in GitHub also requires a reviewer
+rule that designates the project lead. The team can keep project-lead review as a manual step.
+
+GitHub prevents authors from approving their own pull requests. Nergis can ask another eligible
+teammate to approve hers. If the team wants Nergis to be able to merge those PRs without approval,
+use GitHub's **For pull requests only** bypass mode for the intended actor. That mode keeps the
+pull request requirement in place.
 
 ## Decisions to check with the team
 
-- Raise the `main` ruleset to 1 required approval with an admin bypass (see "Branch rule for `main`"), or confirm that 0 is intended.
+- Decide whether to require one approval and how to keep project-lead review in the merge process. Confirm whether Nergis needs a pull-request-only bypass.
 - Confirm Azure PostgreSQL and Prisma for Day 2 with Nergis. The current projects reader uses Supabase and the frontend handoff refers to Vercel, while the architecture specifies Azure PostgreSQL and Azure App Service.
 - The architecture leaves the notification channel open. Add the email credential name once the team picks a provider and defines its variable.
 
