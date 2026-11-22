@@ -25,6 +25,7 @@
 ## Things the next person should know
 
 - Club roles and per-project roles use separate enums. A future authorization check must read the project role from the membership row.
+- Model names are singular, so the client calls are `prisma.user`, `prisma.project`, `prisma.projectMember` and `prisma.projectOverview`. `@map` renames only the database columns: Prisma returns camelCase fields such as `startDate`, `imageUrl` and `isPublic`. `toProject()` in `src/lib/projects.js` still reads snake_case keys (`start_date`, `image_url`), so W3D1-BE must update it, or dates and photos will silently go missing.
 - The unique email index compares stored values. Normalize email consistently during registration and login in Week 2.
 - The projects page still serves the sample data established by W1D2-BE. The plan connects the public API in W3D1-BE.
 - Graphify's local code-only trial skipped `schema.prisma`. Review the schema directly.
@@ -35,6 +36,7 @@
 - An offline `prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script` produced the four tables, role enums, unique email, composite membership key, overview key, and foreign keys. The command only printed SQL.
 - `npm run lint` passed.
 - `npm run build` passed with the default Turbopack build.
+- Review by Claude Code (Nov 22): re-ran all of the checks above on a clean checkout and compared the offline SQL with the architecture's Data section. Unique email, one membership per user and project, one overview per project, separate club and project roles, and private-by-default, unarchived projects are all enforced. No schema changes were needed. The review fixed the stale `prisma.projects` comment in `src/lib/projects.js` and added the camelCase note above.
 
 ## Next up
 
