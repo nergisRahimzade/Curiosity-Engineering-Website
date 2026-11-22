@@ -1,8 +1,12 @@
 // W1D5-BE: seed script. Fills the database with the first officer account and,
-// outside production, some sample data so pages have something to show.
+// only when SEED_SAMPLE_DATA=true, some sample data so pages have something to show.
 //
 // Run it with:  npx prisma db seed
 // (prisma.config.ts tells Prisma to run this file.)
+//
+// Needs Node 22.18+ from nodejs.org or nvm (not Ubuntu's apt package): it loads
+// Prisma's generated client, which is TypeScript, and only official Node builds
+// can run .ts files directly.
 //
 // Safe to run more than once: every step looks for an existing row first, so a
 // second run doesn't create duplicates.
@@ -10,13 +14,38 @@
 import "dotenv/config";
 import bcrypt from "bcrypt";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client.ts";
 
-// Same connection setup as src/lib/db.js. This script runs outside Next.js,
-// so it can't use the "@/lib/db" shortcut and makes its own client.
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+// Set in main() once the client has loaded.
+let prisma;
+
+// A setup problem the person can fix (wrong Node, missing .env value...).
+// These print as one clear message instead of a stack trace.
+class SetupError extends Error {}
+
+// Load Prisma's generated client. If that fails, explain the two usual causes
+// instead of showing a long stack trace.
+async function loadPrismaClient() {
+  try {
+    const { PrismaClient } = await import("../src/generated/prisma/client.ts");
+    // Same connection setup as src/lib/db.js. This script runs outside Next.js,
+    // so it can't use the "@/lib/db" shortcut and makes its own client.
+    return new PrismaClient({
+      adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+    });
+  } catch (error) {
+    if (error.code === "ERR_UNKNOWN_FILE_EXTENSION") {
+      throw new SetupError(
+        `This Node (${process.version} at ${process.execPath}) can't run TypeScript files.\n` +
+          "The seed needs Node 22.18+ from nodejs.org or nvm, not Ubuntu's apt package.\n" +
+          'Check with: node -p "process.features.typescript"  (it should print "strip").',
+      );
+    }
+    if (error.code === "ERR_MODULE_NOT_FOUND") {
+      throw new SetupError("Prisma's client hasn't been generated yet. Run `npx prisma generate`, then seed again.");
+    }
+    throw error;
+  }
+}
 
 // bcrypt "cost": how much work each hash takes. 10 is the common default:
 // fast enough for login, slow enough to make guessing passwords expensive.
@@ -35,12 +64,12 @@ async function seedFirstOfficer() {
   // The officer's details live in .env, never in this file, so no real
   // person's email or password is committed to GitHub.
   if (!name || !email || !password) {
-    throw new Error(
+    throw new SetupError(
       "Set SEED_OFFICER_NAME, SEED_OFFICER_EMAIL and SEED_OFFICER_PASSWORD in .env first (see .env.example).",
     );
   }
   if (password.length < 12) {
-    throw new Error("SEED_OFFICER_PASSWORD must be at least 12 characters.");
+    throw new SetupError("SEED_OFFICER_PASSWORD must be at least 12 characters.");
   }
 
   // upsert = "update if it exists, otherwise create". update is empty on
@@ -62,8 +91,8 @@ async function seedFirstOfficer() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Sample data (skipped in production, so W6D3 can reuse this script for
-//    just the first officer)
+// 2. Sample data (opt-in with SEED_SAMPLE_DATA=true, so seeding the production
+//    database in W6D3 creates only the first officer by default)
 // ---------------------------------------------------------------------------
 
 // For tables without a unique column (projects, events...), find a row by a
@@ -259,10 +288,14 @@ async function seedSampleData(officer) {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  prisma = await loadPrismaClient();
   const officer = await seedFirstOfficer();
 
-  if (process.env.NODE_ENV === "production") {
-    console.log("NODE_ENV is production: skipping sample data.");
+  // Sample data is opt-in: forgetting the setting is then the safe mistake.
+  // Production never gets sample data, even if the setting is left on.
+  const wantsSampleData = process.env.SEED_SAMPLE_DATA === "true";
+  if (!wantsSampleData || process.env.NODE_ENV === "production") {
+    console.log("Skipping sample data (set SEED_SAMPLE_DATA=true in .env to add it).");
     return;
   }
   await seedSampleData(officer);
@@ -270,7 +303,8 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error(error);
+    // Setup problems print just the message; anything unexpected keeps its full details.
+    console.error(error instanceof SetupError ? error.message : error);
     process.exitCode = 1;
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => prisma?.$disconnect());
