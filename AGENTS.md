@@ -40,7 +40,8 @@ team are beginners learning as they build, so code and explanations are written 
 - `src/components/`: `Navbar`, `Footer`, `Button`, `Card`, `Container`, `projects/ProjectGrid`.
 - `src/lib/site.js` (routes + site name), `src/lib/projects.js` (project data), `sample-projects.js`.
 - `docs/handoffs/`: one note per finished task. Read the newest ones for your layer first.
-- **Not built yet:** API routes, Prisma, auth, tests, CI, `.env.example`.
+- `.env.example` (root): names of the env variables, no values. Real values go in the ignored `.env`.
+- **Not built yet:** API routes, Prisma (W1D2-BE adds it: `prisma/schema.prisma`, `src/lib/db.js`), auth, tests, CI.
 
 ## Known conflicts: ask the project lead (Nergis), don't settle them in code
 
