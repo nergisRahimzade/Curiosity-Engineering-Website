@@ -11,7 +11,7 @@ export default function Footer() {
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             {footerLinks.map(({ href, label }) => (
               <li key={href}>
-                <Link href={href} className="hover:text-foreground">
+                <Link href={href} className="inline-block py-1 hover:text-foreground">
                   {label}
                 </Link>
               </li>

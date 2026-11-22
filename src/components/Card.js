@@ -31,7 +31,7 @@ export default function Card({
 
   return (
     <article
-      className={`group relative flex h-full flex-col overflow-hidden rounded-lg border border-line bg-background transition-colors ${
+      className={`group relative flex h-full flex-col overflow-hidden rounded-lg border border-line bg-background transition-colors motion-reduce:transition-none ${
         interactive
           ? "hover:border-foreground has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-accent"
           : ""

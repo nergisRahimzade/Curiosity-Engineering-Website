@@ -17,7 +17,9 @@ export default function MobileMenu() {
         aria-expanded={open}
         aria-controls="mobile-nav"
         onClick={() => setOpen((v) => !v)}
-        className="text-sm font-medium text-foreground"
+        // 44px tall so it's easy to tap (plan: at least 24px, ideally 44px).
+        // The negative margin keeps the text lined up with the page edge.
+        className="-mr-3 inline-flex h-11 items-center px-3 text-sm font-medium text-foreground"
       >
         {open ? "Close" : "Menu"}
       </button>

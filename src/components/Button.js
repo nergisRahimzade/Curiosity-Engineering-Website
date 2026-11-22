@@ -3,7 +3,7 @@ import Link from "next/link";
 // One button style for the whole site. Renders a <Link> when given an
 // internal href, a plain <a> for external URLs, and a <button> otherwise.
 //
-//   <Button href="/join">Join the club</Button>
+//   <Button href="/register">Join the club</Button>
 //   <Button variant="secondary" href="/projects">See projects</Button>
 //   <Button type="submit" disabled={saving}>Save</Button>
 //
@@ -13,7 +13,7 @@ import Link from "next/link";
 //   ghost     – low-key actions such as "Cancel" (text only)
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors " +
+  "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors motion-reduce:transition-none " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
   "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
@@ -47,16 +47,18 @@ export default function Button({
   } ${className}`;
 
   if (href && isExternal(href)) {
+    // Web links open in a new tab; mailto:/tel: open the user's app instead.
+    const newTab = href.startsWith("http");
     return (
       <a
         href={href}
         className={classes}
-        {...(href.startsWith("http")
-          ? { target: "_blank", rel: "noopener noreferrer" }
-          : {})}
+        {...(newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         {...props}
       >
         {children}
+        {/* Screen readers are told before the tab switches under them. */}
+        {newTab && <span className="sr-only"> (opens in new tab)</span>}
       </a>
     );
   }
