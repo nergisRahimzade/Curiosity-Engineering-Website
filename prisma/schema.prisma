@@ -37,6 +37,12 @@ model User {
   createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   memberships  ProjectMember[]
 
+  // W1D4-BE: a task points at two users, so each list names its relation.
+  assignedTasks Task[]        @relation("TaskAssignee")
+  createdTasks  Task[]        @relation("TaskCreator")
+  meetingNotes  MeetingNote[]
+  attendance    Attendance[]
+
   @@map("users")
 }
 
@@ -55,6 +61,8 @@ model Project {
 
   members  ProjectMember[]
   overview ProjectOverview?
+  tasks    Task[]
+  events   Event[]
 
   @@map("projects")
 }
@@ -84,4 +92,112 @@ model ProjectOverview {
   project Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
 
   @@map("project_overviews")
+}
+
+// W1D4-BE: calendar, activities, tasks, meeting notes and attendance.
+
+// The plan's four event types. The calendar shows each one as a text label.
+enum EventType {
+  conference
+  competition
+  general_meeting
+  project_meeting
+
+  @@map("event_type")
+}
+
+enum AttendanceStatus {
+  present
+  absent
+
+  @@map("attendance_status")
+}
+
+model Event {
+  id    Int       @id @default(autoincrement())
+  title String
+  type  EventType
+
+  // timestamptz stores the exact moment in UTC; pages show it in Pacific time.
+  startsAt DateTime @map("starts_at") @db.Timestamptz(3)
+  endsAt   DateTime @map("ends_at") @db.Timestamptz(3)
+  // Optional: an online or not-yet-booked event has no place yet.
+  location String?
+
+  // Optional: a general meeting or conference belongs to no project.
+  projectId Int?     @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Restrict)
+
+  meetingNotes MeetingNote[]
+  attendance   Attendance[]
+
+  // startsAt: the calendar and the reminder job search by start time.
+  @@index([startsAt])
+  @@index([projectId])
+  @@map("events")
+}
+
+model Activity {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  // A past activity happened on a day, so this is a date without a time.
+  date        DateTime @db.Date
+  // Optional until the photo upload exists (W3D3-BE).
+  imageUrl    String?  @map("image_url")
+
+  @@map("activities")
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  projectId   Int       @map("project_id")
+  title       String
+  description String?
+  // Text until the team agrees on the allowed values, like Project.status.
+  status      String
+  dueDate     DateTime? @map("due_date") @db.Date
+
+  // The assignee does the work and can be empty until an officer assigns it.
+  // The creator is the officer who made the task and never changes.
+  assigneeId  Int? @map("assignee_id")
+  createdById Int  @map("created_by")
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  assignee  User?   @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Restrict)
+  createdBy User    @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  // Indexes for "this project's tasks" and "my tasks".
+  @@index([projectId])
+  @@index([assigneeId])
+  @@map("tasks")
+}
+
+model MeetingNote {
+  id        Int      @id @default(autoincrement())
+  eventId   Int      @map("event_id")
+  content   String
+  authorId  Int      @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  // Restrict: an event with notes can't be deleted until its notes are handled.
+  event  Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([eventId])
+  @@map("meeting_notes")
+}
+
+model Attendance {
+  eventId Int              @map("event_id")
+  userId  Int              @map("user_id")
+  status  AttendanceStatus
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // One attendance row per person per event, like ProjectMember.
+  @@id([eventId, userId])
+  @@index([userId])
+  @@map("attendance")
 }
