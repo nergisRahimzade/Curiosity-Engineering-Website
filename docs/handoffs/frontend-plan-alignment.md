@@ -1,6 +1,6 @@
 # Handoff — Frontend: align D01–D03 with the new plan
 
-**Branch:** `setup/frontend-plan-alignment` (from `main` @ `0b86e85`)
+**Branch:** `setup/frontend-plan-alignment` (from `main` @ `8fe9457`)
 **Plan tasks it brings up to date:** W1D4-FE "Choose colours and fonts; install Tailwind and set them in `@theme`" (Tailwind part only) and W1D5-FE "Root layout, navbar and footer; shared `Button` and `Card` components". Not a plan task itself, so it has a descriptive branch name.
 **Status:** Done
 
@@ -19,7 +19,7 @@ The old D01–D03 work was checked against `docs/plan/tasks.md` and `docs/plan/a
 
 **Accessibility (gaps 3, 6, 7, 8)**
 - **Skip link**: "Skip to content" is the first thing Tab reaches. It's hidden until focused and jumps to `<main id="main">`.
-- **New-tab links**: `Button` adds hidden "(opens in new tab)" text to `http(s)` links.
+- **New-tab links**: `Button` works out where a link really opens (web links default to a new tab; a caller's `target` wins) and adds hidden "(opens in new tab)" text whenever it's `_blank`, on both external and internal links.
 - **Reduced motion**: `motion-reduce:transition-none` on `Button`, `Card` and nav links.
 - **Tap targets**: mobile "Menu" button 44px tall, desktop nav links and brand link 36px, footer links 28px (all were ~20px; plan minimum is 24px).
 
@@ -39,10 +39,12 @@ Run `npm install` after pulling (new devDependency). No new env vars.
 
 ## Things the next person should know
 
+- `package-lock.json` in this PR also drops about 15 `"peer": true` lines. That's npm-version noise, not a real change; another npm version may add them back on `npm install`. Harmless either way.
+
 - New pages go in the right group: public pages in `(public)/`, member pages in `(member)/`, officer pages in `officer/`.
 - The jsx-a11y rules config only copies the **rules**. Don't add `jsxA11y.flatConfigs.recommended` as a whole: Next already registers the plugin, and registering it twice is an ESLint error.
 - `loading.js` / `error.js` per route group are planned for W5D4-FE; they can go into the groups now if a page needs them earlier.
-- `src/lib/projects.js` still has comments about Supabase and "Day 12"; that file belongs to W3D1 and wasn't changed here.
+- `src/lib/projects.js` still has an old "Day 12" comment (line 16); that file belongs to W3D1 and wasn't changed here.
 
 ## Verification
 

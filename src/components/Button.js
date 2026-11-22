@@ -46,27 +46,37 @@ export default function Button({
     sizes[size] ?? sizes.md
   } ${className}`;
 
+  // Work out where a link really opens, once, for both link branches below.
+  // Web links open in a new tab unless the caller picks a target;
+  // mailto:/tel: open the user's app instead. A caller's target="_blank"
+  // on an internal link counts too, so the note below always matches.
+  const target =
+    props.target ??
+    (href && isExternal(href) && href.startsWith("http") ? "_blank" : undefined);
+  const newTab = target === "_blank";
+  // rel="noopener" stops the new tab from controlling this page.
+  const newTabProps = newTab
+    ? { target, rel: props.rel ?? "noopener noreferrer" }
+    : {};
+  // Screen readers are told before the tab switches under them.
+  const newTabNote = newTab && (
+    <span className="sr-only"> (opens in new tab)</span>
+  );
+
   if (href && isExternal(href)) {
-    // Web links open in a new tab; mailto:/tel: open the user's app instead.
-    const newTab = href.startsWith("http");
     return (
-      <a
-        href={href}
-        className={classes}
-        {...(newTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-        {...props}
-      >
+      <a href={href} className={classes} {...props} {...newTabProps}>
         {children}
-        {/* Screen readers are told before the tab switches under them. */}
-        {newTab && <span className="sr-only"> (opens in new tab)</span>}
+        {newTabNote}
       </a>
     );
   }
 
   if (href) {
     return (
-      <Link href={href} className={classes} {...props}>
+      <Link href={href} className={classes} {...props} {...newTabProps}>
         {children}
+        {newTabNote}
       </Link>
     );
   }
