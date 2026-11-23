@@ -43,6 +43,11 @@ model User {
   meetingNotes  MeetingNote[]
   attendance    Attendance[]
 
+  // W1D5-BE: RSVP answers, expenses this officer recorded, reminders sent to them.
+  rsvpResponses    RsvpResponse[]
+  recordedExpenses Expense[]
+  notifications    NotificationLog[]
+
   @@map("users")
 }
 
@@ -63,6 +68,7 @@ model Project {
   overview ProjectOverview?
   tasks    Task[]
   events   Event[]
+  expenses Expense[]
 
   @@map("projects")
 }
@@ -128,8 +134,10 @@ model Event {
   projectId Int?     @map("project_id")
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Restrict)
 
-  meetingNotes MeetingNote[]
-  attendance   Attendance[]
+  meetingNotes  MeetingNote[]
+  attendance    Attendance[]
+  rsvpForm      RsvpForm?
+  notifications NotificationLog[]
 
   // startsAt: the calendar and the reminder job search by start time.
   @@index([startsAt])
@@ -200,4 +208,101 @@ model Attendance {
   @@id([eventId, userId])
   @@index([userId])
   @@map("attendance")
+}
+
+// W1D5-BE: RSVP forms, expenses, budget and the reminder log.
+
+// Enum values can't start with a digit, so "30 min" / "5 min" are spelled out.
+enum NotificationKind {
+  thirty_minutes
+  five_minutes
+
+  @@map("notification_kind")
+}
+
+model RsvpForm {
+  id        Int       @id @default(autoincrement())
+  // @unique: an event has at most one RSVP form (architecture, "How the tables connect").
+  eventId   Int       @unique @map("event_id")
+  title     String
+  // The questions an officer adds, e.g. [{"label": "Dietary needs?", "type": "text"}].
+  questions Json
+  // Optional: without a closing time the form stays open.
+  closesAt  DateTime? @map("closes_at") @db.Timestamptz(3)
+
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  responses RsvpResponse[]
+
+  @@map("rsvp_forms")
+}
+
+model RsvpResponse {
+  id        Int      @id @default(autoincrement())
+  formId    Int      @map("form_id")
+  userId    Int      @map("user_id")
+  // Answers in the same order as the form's questions.
+  answers   Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  form RsvpForm @relation(fields: [formId], references: [id], onDelete: Restrict)
+  user User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // One response per user per form. The user index helps list "my RSVPs".
+  @@unique([formId, userId])
+  @@index([userId])
+  @@map("rsvp_responses")
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  // The day the money was spent, so a date without a time.
+  date        DateTime @db.Date
+  // Whole cents, never decimals: $12.50 is stored as 1250.
+  amountCents Int      @map("amount_cents")
+  // Text until the team agrees on the categories, like Project.status.
+  category    String
+  description String
+  // Optional until the receipt upload exists (W4D3-BE).
+  receiptUrl  String?  @map("receipt_url")
+
+  // Optional: some spending belongs to the whole club, not one project.
+  projectId    Int? @map("project_id")
+  // The officer who logged the expense.
+  recordedById Int  @map("recorded_by")
+
+  // Archived instead of deleted, so past budget totals stay correct.
+  archived Boolean @default(false)
+
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  recordedBy User     @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+
+  // Indexes for "spending per project" and "spending in a date range (term)".
+  @@index([projectId])
+  @@index([date])
+  @@map("expenses")
+}
+
+model Budget {
+  id         Int    @id @default(autoincrement())
+  // A label such as "2026-fall". @unique: one budget per term.
+  term       String @unique
+  totalCents Int    @map("total_cents")
+
+  @@map("budget")
+}
+
+model NotificationLog {
+  eventId Int              @map("event_id")
+  userId  Int              @map("user_id")
+  kind    NotificationKind
+  sentAt  DateTime         @default(now()) @map("sent_at") @db.Timestamptz(3)
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  // The key is event + user + kind, so the reminder job can't send the same
+  // reminder twice, even if the timer runs late or twice (architecture, "Notifications").
+  @@id([eventId, userId, kind])
+  @@index([userId])
+  @@map("notification_log")
 }
