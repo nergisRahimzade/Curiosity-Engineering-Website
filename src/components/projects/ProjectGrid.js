@@ -89,7 +89,7 @@ export function ProjectsEmpty() {
         The club&apos;s projects will show up here once they&apos;re added.
         Want to start one?
       </p>
-      <Button href="/join" variant="secondary" className="mt-6">
+      <Button href="/register" variant="secondary" className="mt-6">
         Join the club
       </Button>
     </div>

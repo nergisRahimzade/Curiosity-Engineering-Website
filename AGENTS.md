@@ -35,8 +35,9 @@ team are beginners learning as they build, so code and explanations are written 
 
 ## Where things are (Nov 21, 2026)
 
-- `src/app/`: routes `/`, `/projects`, `/calendar`, `/join`, `/admin`, `/styleguide` (hidden), 404.
-  Not yet using the plan's route groups (`(public)`, `(member)`, `officer/`).
+- `src/app/`: plan routes since `setup/frontend-plan-alignment` (Nov 22). `(public)/` holds `/`,
+  `/projects`, `/activities`, `/calendar`, `/register`, `/login`; `officer/` holds `/officer`. Also
+  `/styleguide` (hidden) and the 404. `(member)/` is added with its first page.
 - `src/components/`: `Navbar`, `Footer`, `Button`, `Card`, `Container`, `projects/ProjectGrid`.
 - `src/lib/site.js` (routes + site name), `src/lib/projects.js` (project data, sample data for now), `sample-projects.js`.
 - `docs/handoffs/`: one note per finished task. Read the newest ones for your layer first.
@@ -57,7 +58,8 @@ team are beginners learning as they build, so code and explanations are written 
 ## Known conflicts: ask the project lead (Nergis), don't settle them in code
 
 1. **Day numbers:** the D02–D04 frontend handoffs follow an older plan. New work uses `W#D#` IDs (below).
-2. **Routes:** the current `/join` and `/admin` vs the plan's `/register`, `/login`, `/officer/*`.
+2. **Routes:** `setup/frontend-plan-alignment` switches `/join` → `/register` and `/admin` → `/officer`
+   to match the plan. Settled once Nergis merges that PR.
 
 ## Backend rules (from the architecture doc)
 

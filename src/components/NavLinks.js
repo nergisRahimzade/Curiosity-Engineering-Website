@@ -21,7 +21,7 @@ export function NavLinkList({ pathname = null, onNavigate }) {
               href={href}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`block py-2 text-sm transition-colors sm:py-0 ${
+              className={`block py-2 text-sm transition-colors motion-reduce:transition-none ${
                 active
                   ? "font-medium text-foreground"
                   : "text-muted hover:text-foreground"

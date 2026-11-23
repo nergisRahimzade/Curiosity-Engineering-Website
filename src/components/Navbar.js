@@ -13,7 +13,7 @@ export default function Navbar() {
   return (
     <header className="relative border-b border-line">
       <Container className="flex h-16 items-center justify-between">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
+        <Link href="/" className="py-2 text-sm font-semibold tracking-tight">
           {site.shortName}
         </Link>
 

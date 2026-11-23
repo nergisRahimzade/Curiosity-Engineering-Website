@@ -97,7 +97,7 @@ export default function StyleguidePage() {
             <Button size="sm" variant="secondary">
               Small secondary
             </Button>
-            <Button href="/join">Link button</Button>
+            <Button href="/register">Link button</Button>
           </div>
         </Section>
 
