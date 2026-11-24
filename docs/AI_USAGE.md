@@ -30,3 +30,4 @@ Both follow the same rules in [`AGENTS.md`](../AGENTS.md).
 | 2026-11-22 | `W1D4-BE` | Claude Code | Defined the five schema part 2 models, checked them with Prisma validate/generate and an offline SQL diff, and wrote the backend handoff |
 | 2026-11-22 | `setup/frontend-plan-alignment` | Claude Code | Compared the D01–D03 frontend with the new plan, moved pages to the plan's routes and route groups, fixed the accessibility gaps, turned on the jsx-a11y lint rules, wrote the handoff |
 | 2026-11-23 | `W2D1-BE` | Claude Code | Wrote `src/lib/auth.js` (bcrypt + jose helpers), tested it with a throwaway script, ran lint and build, wrote the backend handoff |
+| 2026-11-23 | `W2D2-BE` | Codex | Implemented registration in `f6575f6`; addressed review by rebuilding the local branch from `origin/main`, adding safe server logging and a missing-database guard, clarifying public auth routes, and updating the handoff; see the handoff for current verification results |
