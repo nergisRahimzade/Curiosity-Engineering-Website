@@ -19,6 +19,11 @@
   --accent: #2b59c3; /* primary buttons, focus rings; 6.1:1 on white */
   --accent-hover: #22479c;
   --on-accent: #ffffff; /* text on accent backgrounds */
+
+  /* W2D1-FE: status colours, only for form errors and Badge. They always
+     come with words ("Overdue", the error text), never alone. */
+  --danger: #b42318; /* errors, overdue, absent; 6.6:1 on white */
+  --success: #116329; /* paid, done, present; 6.3:1 on its badge tint */
 }
 
 @theme inline {
@@ -29,6 +34,8 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
   --font-sans: var(--font-geist-sans);
 }
 
@@ -36,4 +43,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* W2D1-FE: stop the page behind an open Modal from scrolling. */
+html:has(dialog[open]:modal) {
+  overflow: hidden;
 }

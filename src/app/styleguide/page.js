@@ -1,6 +1,10 @@
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import Container from "@/components/Container";
+import Badge from "@/components/Badge";
+import FormField from "@/components/FormField";
+import Table from "@/components/Table";
+import ModalDemo from "./ModalDemo";
 
 // Internal reference page: every shared component and color on one screen.
 // Not linked from the navbar or footer and hidden from search engines.
@@ -17,6 +21,31 @@ const colors = [
   { token: "accent", use: "Primary buttons, focus rings" },
   { token: "muted", use: "Secondary text" },
   { token: "line", use: "Borders, dividers" },
+  { token: "danger", use: "Errors, overdue (with text)" },
+  { token: "success", use: "Paid, done (with text)" },
+];
+
+// W2D1-FE: sample rows for the Table demo. Money is in cents, as the plan stores it.
+const sampleExpenses = [
+  { id: 1, date: "Nov 3", item: "Arduino kits", amountCents: 8400, status: "Paid" },
+  { id: 2, date: "Nov 10", item: "Snacks for workshop", amountCents: 2450, status: "Paid" },
+  { id: 3, date: "Nov 18", item: "3D printer filament", amountCents: 3999, status: "Overdue" },
+];
+
+const formatCents = (cents) =>
+  (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+const expenseColumns = [
+  { key: "date", header: "Date" },
+  { key: "item", header: "Item" },
+  { key: "amount", header: "Amount", align: "right", render: (row) => formatCents(row.amountCents) },
+  {
+    key: "status",
+    header: "Status",
+    render: (row) => (
+      <Badge tone={row.status === "Paid" ? "success" : "danger"}>{row.status}</Badge>
+    ),
+  },
 ];
 
 const sampleProjects = [
@@ -64,7 +93,7 @@ export default function StyleguidePage() {
 
       <div className="mt-12">
         <Section title="Colors">
-          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+          <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
             {colors.map(({ token, use }) => (
               <li key={token}>
                 <div
@@ -123,6 +152,68 @@ export default function StyleguidePage() {
               Room 204, Engineering Building.
             </Card>
           </div>
+        </Section>
+
+        <Section title="Badges">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge>Member</Badge>
+            <Badge tone="accent">Officer</Badge>
+            <Badge tone="success">Paid</Badge>
+            <Badge tone="danger">Overdue</Badge>
+          </div>
+        </Section>
+
+        <Section title="Form fields">
+          <div className="max-w-md space-y-5">
+            <FormField label="Name" name="name" autoComplete="name" required />
+            <FormField
+              label="Email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              defaultValue="ana@"
+              error="Enter a valid email address."
+            />
+            <FormField
+              label="Password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              hint="At least 12 characters."
+            />
+            <FormField as="select" label="Event type" name="type" defaultValue="workshop">
+              <option value="meeting">Meeting</option>
+              <option value="workshop">Workshop</option>
+              <option value="social">Social</option>
+              <option value="competition">Competition</option>
+            </FormField>
+            <FormField as="textarea" label="Notes" name="notes" rows={3} />
+          </div>
+        </Section>
+
+        <Section title="Table">
+          <Table
+            caption="Expenses this term"
+            columns={expenseColumns}
+            rows={sampleExpenses}
+            rowHeader="item"
+          />
+          <p className="mt-6 text-sm text-muted">Empty:</p>
+          <Table
+            className="mt-3"
+            caption="Attendees"
+            columns={[
+              { key: "name", header: "Name" },
+              { key: "status", header: "Status" },
+            ]}
+            rows={[]}
+            empty="No one has checked in yet."
+          />
+        </Section>
+
+        <Section title="Modal">
+          <ModalDemo />
         </Section>
 
         <Section title="Container widths">
