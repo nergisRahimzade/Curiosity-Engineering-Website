@@ -42,10 +42,29 @@
 - **The `DATABASE_URL` guard now has a third copy** (register, login, me). Agreed to move it into
   one helper in W2D5, where `requireUser` is built, so this PR doesn't touch W2D3's files.
 
+## Frontend impact
+
+- **Officer and member pages now need a login, also on your own machine.** Opening `/officer`
+  (or `/dashboard`, `/rsvp/*`, `/projects/[id]/tasks`, `/projects/[id]/overview`) without a
+  session redirects to `/login`; a member on `/officer/*` is sent to `/`. To work on those pages
+  locally (W3D2-FE, W3D5-FE, Week 4) you need:
+  1. a `.env` with `DATABASE_URL` and `JWT_SECRET` (see `.env.example` and the W2D3 handoff);
+  2. an account: register at `/register`, or for officer pages, create the first officer with
+     `npx prisma db seed` after filling in `SEED_OFFICER_NAME`, `SEED_OFFICER_EMAIL` and
+     `SEED_OFFICER_PASSWORD` in `.env`. On the shared dev database, ask the team first: only one
+     first officer is created.
+  3. log in at `/login` (Chrome or Firefox; Safari may drop the cookie on `http://localhost`).
+- **Navbar (W2D5-FE):** call `GET /api/auth/me` from the browser. `200 { user: { id, name, email,
+  role } }` → show links by `user.role` (`member` or `officer`); `401` → treat as a visitor. The
+  answer is never cached, so call it again after login and logout. The browser never reads the
+  JWT itself.
+- **Public pages are unaffected:** `/`, `/projects`, `/projects/[id]`, `/activities`,
+  `/calendar`, `/register`, `/login`. W2D4-FE (home page) needs nothing from this task.
+- **Adding a new member or officer page** outside the paths above? Ask backend to add it to
+  `matcher` in `src/proxy.js`, or it will be public.
+
 ## Things the next person should know
 
-- **Frontend (Navbar, W2D5-FE):** call `GET /api/auth/me` from the browser. `200` → show links by
-  `user.role`; `401` → treat as a visitor. The browser never reads the JWT itself.
 - **Proxy is a convenience, not the security.** Every route handler that returns or changes
   private data must check the session and role itself (W2D5 helpers).
 - **Project lead pages** (`/projects/[id]/overview`): the proxy only checks for a login. Whether
