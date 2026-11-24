@@ -66,6 +66,7 @@ team are beginners learning as they build, so code and explanations are written 
 - API = Route Handlers at `src/app/api/**/route.js` (the plan writes `app/`; this repo uses `src/app/`).
 - **Every request that changes data:** read the JWT from the httpOnly cookie, check the role
   **on the server**, then validate the body with **Zod**. Hiding a button never protects anything.
+  Registration and login are public exceptions: validate their input without requiring an existing JWT.
 - `proxy.js` (Next 16's name for middleware) only redirects for convenience. It isn't the security.
 - JWT holds `userId`, `role` (`member`/`officer`) and a 1-day expiry, signed with `JWT_SECRET` using `jose`.
   Passwords are hashed with `bcrypt`.
