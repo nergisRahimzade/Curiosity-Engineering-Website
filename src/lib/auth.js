@@ -44,9 +44,14 @@ export const SESSION_COOKIE_OPTIONS = {
 export function isSameOrigin(request) {
   const origin = request.headers.get("origin");
   if (origin === null) return true;
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   // "null" or a malformed Origin can't be parsed, so it fails the check.
-  return URL.canParse(origin) && new URL(origin).host === host;
+  if (!URL.canParse(origin)) return false;
+  const originHost = new URL(origin).host;
+  // Like Next.js: proxies may send a list ("site.com, proxy.local"), so use
+  // the first entry; a match on Host also counts. A browser on another site
+  // can't fake X-Forwarded-Host, so accepting either one is still safe.
+  const forwarded = request.headers.get("x-forwarded-host")?.split(",")[0].trim();
+  return originHost === forwarded || originHost === request.headers.get("host");
 }
 
 // --- Passwords ---------------------------------------------------------------
