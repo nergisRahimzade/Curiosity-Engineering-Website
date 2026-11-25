@@ -1,13 +1,10 @@
 // W2D2-BE: Public registration creates a member account with a hashed password.
 import { hashPassword } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { databaseUrlMissing, prisma } from "@/lib/db";
 import { registerSchema } from "@/lib/validation";
 
 export async function POST(request) {
-  // Without a URL, the PostgreSQL driver can silently connect to localhost.
-  // Keep this request-time check here so missing build-time secrets are allowed.
-  if (!process.env.DATABASE_URL?.trim()) {
-    console.error("POST /api/auth/register: DATABASE_URL is not set");
+  if (databaseUrlMissing("POST /api/auth/register")) {
     return Response.json(
       { error: "Unable to create your account. Please try again later." },
       { status: 500 },

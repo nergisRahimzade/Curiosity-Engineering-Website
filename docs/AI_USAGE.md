@@ -35,3 +35,5 @@ Both follow the same rules in [`AGENTS.md`](../AGENTS.md).
 | 2026-11-24 | `W2D3-BE` | Codex | Reviewed login/logout before commit (cross-site check, password limit) |
 | 2026-11-24 | `W2D4-BE` | Claude Code | Wrote `GET /api/auth/me` and `src/proxy.js`, checked them with curl and throwaway tokens against the Azure dev database, ran lint and build, wrote the handoff; fixed the Codex review findings |
 | 2026-11-24 | `W2D4-BE` | Codex | Reviewed `/me` and the proxy before commit (encoded officer paths, guard order, handoff wording) |
+| 2026-11-24 | `W2D5-BE` | Claude Code | Wrote the four role helpers in `src/lib/permissions.js` and the shared `DATABASE_URL` check, checked them against the Azure dev database as visitor, member, lead, officer and demoted officer, ran lint and build, wrote the handoff; fixed the Codex review findings |
+| 2026-11-24 | `W2D5-BE` | Codex | Reviewed the role helpers before commit (project id handling, log contents, officer wording) |
