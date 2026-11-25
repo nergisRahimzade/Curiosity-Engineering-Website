@@ -38,7 +38,7 @@ team are beginners learning as they build, so code and explanations are written 
 - `src/app/`: plan routes since `setup/frontend-plan-alignment` (Nov 22). `(public)/` holds `/`,
   `/projects`, `/activities`, `/calendar`, `/register`, `/login`; `officer/` holds `/officer`. Also
   `/styleguide` (hidden) and the 404. `(member)/` is added with its first page.
-- `src/components/`: `Navbar`, `Footer`, `Button`, `Card`, `Container`, `projects/ProjectGrid`.
+- `src/components/`: `Navbar`, `Footer`, `Button`, `Card`, `Container`, `FormField`, `Table`, `Modal`, `Badge`, `projects/ProjectGrid`. See them all at `/styleguide`.
 - `src/lib/site.js` (routes + site name), `src/lib/projects.js` (project data, sample data for now), `sample-projects.js`.
 - `docs/handoffs/`: one note per finished task. Read the newest ones for your layer first.
 - `.env.example` (root): names of the env variables, no values. Real values go in the ignored `.env`.
