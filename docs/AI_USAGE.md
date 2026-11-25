@@ -33,3 +33,5 @@ Both follow the same rules in [`AGENTS.md`](../AGENTS.md).
 | 2026-11-23 | `W2D2-BE` | Codex | Implemented registration in `f6575f6`; addressed review by rebuilding the local branch from `origin/main`, adding safe server logging and a missing-database guard, clarifying public auth routes, and updating the handoff; see the handoff for current verification results |
 | 2026-11-24 | `W2D3-BE` | Claude Code | Wrote the login and logout routes, the shared session-cookie settings and login validation, checked them with curl against the Azure dev database, ran lint and build, wrote the handoff; fixed the Codex review findings |
 | 2026-11-24 | `W2D3-BE` | Codex | Reviewed login/logout before commit (cross-site check, password limit) |
+| 2026-11-24 | `W2D4-BE` | Claude Code | Wrote `GET /api/auth/me` and `src/proxy.js`, checked them with curl and throwaway tokens against the Azure dev database, ran lint and build, wrote the handoff; fixed the Codex review findings |
+| 2026-11-24 | `W2D4-BE` | Codex | Reviewed `/me` and the proxy before commit (encoded officer paths, guard order, handoff wording) |
