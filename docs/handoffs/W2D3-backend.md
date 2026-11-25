@@ -44,9 +44,9 @@
 - **Origin check on login and logout (beyond the plan, from the Codex review).** `sameSite=lax`
   stops other sites from *sending* our cookie, but login and logout don't need one, and their
   response can still *set* it. Without a check, a form on another site could log a visitor into
-  the attacker's account, or log them out. `isSameOrigin` compares the `Origin` header to
-  `X-Forwarded-Host`/`Host`, the same rule Next.js applies to Server Actions (Route Handlers get
-  no such check). A request with no `Origin` (curl, server tools) is allowed, since browsers
+  the attacker's account, or log them out. `isSameOrigin` checks that the `Origin` header's host
+  matches either the first entry of `X-Forwarded-Host` (proxies can send a list) or `Host`, the
+  same rule Next.js applies to Server Actions (Route Handlers get no such check). A request with no `Origin` (curl, server tools) is allowed, since browsers
   always send one on a POST. Routes that need a login are already covered by `sameSite=lax`.
   On Azure, App Service passes the original `Host` through; re-test once deployed (W6D2).
 - **No dummy bcrypt compare for unknown emails.** An unknown email answers slightly faster than
@@ -99,6 +99,10 @@
   - logout with no `Origin` or the same origin → `200` and clears the cookie; another site → `403`;
   - login password of 73 ASCII bytes, or 37 × `é` (74 bytes) → `400`; 72 bytes → `401`;
   - registration still answers `too_small` (under 12 characters) and the 72-byte error, as before.
+- After the PR 14 review (logout, so `200` = the Origin check passed): `X-Forwarded-Host` list
+  whose first entry matches → `200`; list where only the second entry matches → `403`;
+  wrong `X-Forwarded-Host` but matching `Host` → `200`; earlier cases unchanged (no `Origin` and
+  same origin `200`; another site, `null`, malformed `403`).
 - Not checked: a real browser (including Safari), officer login (no officer account exists yet),
   and the Origin check behind Azure App Service (re-test at deploy, W6D2).
 
