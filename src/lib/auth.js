@@ -12,12 +12,47 @@ import { SignJWT, jwtVerify } from "jose";
 // Higher is slower to guess but also slower to log in; 10 is the usual default.
 const BCRYPT_ROUNDS = 10;
 
-// The architecture doc: tokens expire after 1 day.
-const TOKEN_LIFETIME = "1d";
+// The architecture doc: tokens expire after 1 day. W2D3-BE: the session cookie
+// uses the same number, so the browser drops the cookie when its token expires.
+const TOKEN_LIFETIME_SECONDS = 60 * 60 * 24;
 
 // The only algorithm we sign with. verifyToken accepts nothing else, so a
 // forged token can't claim a weaker algorithm to get past the check.
 const ALGORITHM = "HS256";
+
+// --- Session cookie (W2D3-BE) -------------------------------------------------
+
+// The cookie that carries the login token. Login sets it, logout clears it,
+// and /api/auth/me (W2D4-BE) reads it.
+export const SESSION_COOKIE = "session";
+
+// Login and logout must use the same settings: a browser only replaces a
+// cookie when the name and path match.
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true, // page JavaScript can't read the token
+  secure: true, // HTTPS only (browsers treat http://localhost as secure too)
+  sameSite: "lax", // not sent with cross-site form posts, which blocks most CSRF
+  path: "/", // sent to every page and API route
+  maxAge: TOKEN_LIFETIME_SECONDS,
+};
+
+// Login and logout change the cookie without needing one, so sameSite can't
+// protect them: a form on another site could log a visitor into the attacker's
+// account. Same rule Next.js uses for Server Actions: the Origin header must
+// name this host. No Origin means no browser (browsers send it on every POST),
+// e.g. curl, which can't act for a visitor anyway.
+export function isSameOrigin(request) {
+  const origin = request.headers.get("origin");
+  if (origin === null) return true;
+  // "null" or a malformed Origin can't be parsed, so it fails the check.
+  if (!URL.canParse(origin)) return false;
+  const originHost = new URL(origin).host;
+  // Like Next.js: proxies may send a list ("site.com, proxy.local"), so use
+  // the first entry; a match on Host also counts. A browser on another site
+  // can't fake X-Forwarded-Host, so accepting either one is still safe.
+  const forwarded = request.headers.get("x-forwarded-host")?.split(",")[0].trim();
+  return originHost === forwarded || originHost === request.headers.get("host");
+}
 
 // --- Passwords ---------------------------------------------------------------
 
@@ -52,7 +87,7 @@ export async function signToken({ userId, role }) {
   return new SignJWT({ userId, role })
     .setProtectedHeader({ alg: ALGORITHM })
     .setIssuedAt()
-    .setExpirationTime(TOKEN_LIFETIME)
+    .setExpirationTime(`${TOKEN_LIFETIME_SECONDS}s`)
     .sign(getSecretKey());
 }
 
