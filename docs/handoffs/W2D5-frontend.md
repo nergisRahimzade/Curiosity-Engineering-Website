@@ -3,15 +3,23 @@
 
 **Branch:** `W2D5-FE` (from `main` @ `2726e8a`, which includes W2D4-FE / PR #20)
 **Plan task:** "Navbar shows links by role using `/api/auth/me`; test the full auth flow together"
-**Status:** Built and checked against mocked API replies. Lint and build pass. **Blocked on
-backend for a real end-to-end test:** `/api/auth/me` isn't on `main` yet (see the first decision).
+**Status:** Built, plus fixes for the Codex review on PR #21. Lint and build pass. Checked
+against mocked API replies and against the real `/me` and `proxy.js` (without a database).
 
 ## What's done
 
 - **`src/lib/session.js` (new):** one shared copy of "who is logged in" for the page.
   - The first navbar component to need it calls `GET /api/auth/me` once. The desktop links and the
     phone menu share that one request.
-  - `200 { user }` → logged in. `401`, `500`, an HTML error page or no network → visitor.
+  - `200 { user }` → logged in. `401` → visitor (a real answer, never retried).
+  - `500`, `404`, an HTML error page or no network → **unknown** (`failed: true`). The navbar shows
+    the visitor links meanwhile and **tries again** (Codex review P2):
+    - on a timer that waits longer each time: 2s, 5s, 15s, 30s, then every 60s;
+    - straight away when the browser comes back online, the tab is shown again, or the user opens
+      another page;
+    - those instant retries need at least 1s since the last reply, so events that fire together
+      (or a failure while the page is still drawing) send one request, not a burst.
+    - A success, a `401` or a logout stops the retries.
   - `refreshSession()` asks again (the login form calls it). `clearSession()` is for after logout.
   - Each request is numbered and only the newest may update the navbar, so a slow reply from before
     a login can't put the visitor links back.
@@ -38,7 +46,12 @@ backend for a real end-to-end test:** `/api/auth/me` isn't on `main` yet (see th
   on the page, so screen readers hear changes. "You're logged out." is screen-reader only (everyone
   else sees the links change). The logout error shows for everyone.
 - **`NavLinks.js` / `MobileMenu.js` / `Navbar.js`:** read the session and pass it to `NavLinkList`.
-  The Suspense fallback still works and shows the loading links.
+  The Suspense fallback still works and shows the loading links. `NavLinks` calls
+  `recheckIfFailed()` on every page change.
+- **Merged `W2D4-BE` into this branch (Codex review P1):** `/api/auth/me`, `src/proxy.js`,
+  `src/lib/permissions.js` (the W2D5-BE role helpers), the shared `DATABASE_URL` check in
+  `src/lib/db.js`, and the W2D4/W2D5 backend handoffs. This is a plain merge of the
+  already-reviewed PRs #15 and #16, with no edits.
 - **`LoginForm.js`:** calls `refreshSession()` on a `200`, so the navbar shows the member or officer
   links straight away (one line).
 
@@ -48,29 +61,31 @@ No new packages or env vars.
 
 ## Decisions to check with the team
 
-- **`/api/auth/me`, `proxy.js` and the role helpers are not on `main`.** PR #15 (W2D4-BE) was merged
-  into `W2D3-BE`, and PR #16 (W2D5-BE) into `W2D4-BE`, *after* `W2D3-BE` had already been merged into
-  `main` (#14). So the backend work is stranded on `W2D4-BE`. Backend needs to open
-  **`W2D4-BE` → `main`**. It merges into today's `main` with no conflicts (checked with
-  `git merge-tree`). Until then this navbar gets a `404` from `/me` and
-  shows the visitor links to everyone, which is safe but means nobody sees "Log out" yet.
-  This PR deliberately doesn't copy backend files in.
+- **This PR now carries backend work.** `/api/auth/me`, `proxy.js` and the role helpers were merged
+  only into the stacked `W2D3-BE`/`W2D4-BE` branches (PRs #15, #16), after `W2D3-BE` had already
+  reached `main` (#14), so they never got there. The navbar needs `/me`, so (Codex review P1)
+  `W2D4-BE` is merged in here unchanged. That breaks "one task = one PR". The alternative was a
+  separate `W2D4-BE` → `main` PR merged first. **Backend, please look over the merge commit.**
+  Merging this PR brings W2D4-BE and W2D5-BE to `main`.
+- **After this merges, member and officer pages need a login, also locally** (the proxy). See the
+  W2D4-backend handoff's "Frontend impact" for making a test account.
 - **Officers see both "Dashboard" and "Officer".** Officers can lead projects, and "Projects I lead"
   lives on the dashboard. If the team wants officers to see only "Officer", change `roleLinks.officer`.
 - **Visitors now get "Log in" in the navbar**, not only in the footer. Logged-in users have no way to
   reach the logout route otherwise, and visitors need the matching way in.
 - **Logout always goes to `/`**, even from a public page like `/projects`. That's simpler than
   checking which pages are protected, and it never leaves a member page on screen.
-- **A `500` from `/me` shows the visitor links.** A logged-in user would briefly see "Log in" if the
-  database is down. The alternative (showing nothing) hides the public links too.
+- **While `/me` is failing, the navbar shows the visitor links.** A logged-in user would briefly see
+  "Log in" if the database is down, until a retry succeeds. The alternative (showing nothing) hides
+  the public links too.
 - **The footer doesn't change by role.** It's a server component, so it can't know who is logged in
   without making every page dynamic. It still shows "Join" and "Log in" to members.
 - **No "Hi, {name}" in the navbar.** It's not in the plan, and it would crowd the phone layout.
 
 ## Things the next person should know
 
-- **Another tab logging out isn't noticed** until this tab reloads or logs in. Refreshing on
-  `visibilitychange` would fix that, at one database query per tab switch. Not done.
+- **Another tab logging out isn't noticed** until this tab reloads or logs in. Retries on
+  `visibilitychange` happen only after a *failed* check, so a tab switch normally sends no request.
 - **Back after logout** can still show a cached member page (Next keeps pages alive with
   `cacheComponents`). Member and officer pages must load their data from API routes that check the
   role (W2D5-BE helpers), so a cached screen never shows anything new.
@@ -81,7 +96,7 @@ No new packages or env vars.
 
 ## Full auth flow to test together (Friday check-in)
 
-Once `W2D4-BE` is on `main`, run `npm run dev` with a `.env` holding `DATABASE_URL` and
+On this branch (or `main` once it merges), run `npm run dev` with a `.env` holding `DATABASE_URL` and
 `JWT_SECRET`, in Chrome or Firefox (Safari may drop the `Secure` cookie on localhost):
 
 1. Logged out: the navbar shows Join and Log in. `/officer` and `/dashboard` redirect to `/login`.
@@ -92,10 +107,12 @@ Once `W2D4-BE` is on `main`, run `npm run dev` with a `.env` holding `DATABASE_U
    `/` with Join + Log in, and `/dashboard` redirects to `/login` again.
 6. Log in as the seeded officer: Dashboard, Officer and Log out show. `/officer` opens, and "Officer" is highlighted.
 7. Stop the server, then click Log out: the error message appears, and you're still logged in after restarting.
+8. Logged in, stop the server and reload: you see the visitor links. Start it again: within about a
+   minute (or at once when you click another page), your links come back without reloading.
 
 ## Verification
 
-Run on 2026-11-26.
+Run on 2026-11-26, then again after the Codex review fixes.
 
 - **`npm run lint`:** 0 problems (Mac checkout).
 - **`npm run build`:** passes on a clean copy (`npm ci`, 511 packages) in the cloud sandbox. As in
@@ -117,8 +134,25 @@ Run on 2026-11-26.
   - Phone (390px): the menu shows officer links + Log out. Logging out closes the menu, and reopening it shows visitor links. No sideways scroll.
   - Keyboard: Tab reaches Log out, and Enter logs out.
   - No page errors.
-- **Not verified:** a real login/logout against the Azure dev database (blocked: `/me` isn't on
-  `main`), Safari and Firefox, a real screen reader.
+- **Codex review fixes: 16/16 checks passed, run twice.** The server was started with a test-only
+  `JWT_SECRET` and no database:
+  - **Real endpoint, no mock (P1):** `GET /api/auth/me` answers `401` JSON for a visitor. The navbar
+    shows visitor links and sends 1 request in 3s (a `401` isn't retried). The real proxy sends
+    `/officer` without a login to `/login` with a `307`.
+  - **Recovery (P2):**
+    - one network error, then a good reply: the timer retries after about 2s and member links return
+      with no user action, then no more requests;
+    - a `500` + clicking another page, a network error + the `online` event, and a `404` + the tab
+      shown again: each retries at once;
+    - from the phone menu, opening another page retries;
+    - server down for 8.5s: at most 3 requests (0s, 2s, 7s), and visitor links meanwhile;
+    - a `500` while the page loads gives no instant second request, and `online` + visibility +
+      `online` fired together give one request.
+  - **Re-run of the 50 navbar checks:** 47 passed, the same 3 pre-existing `/projects` failures.
+    `/officer` was checked with a token signed with the test secret, because the real proxy
+    now checks it.
+- **Not verified:** a real login/logout against the Azure dev database, Safari and Firefox, a real
+  screen reader.
 
 ## Next up
 

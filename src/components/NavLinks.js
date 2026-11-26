@@ -5,10 +5,11 @@
 // "Dashboard", officers get "Dashboard" and "Officer", and anyone logged in
 // gets a "Log out" button.
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
-import { loadingSession, useSession } from "@/lib/session";
+import { loadingSession, recheckIfFailed, useSession } from "@/lib/session";
 import { navLinksFor } from "@/lib/site";
 
 // "/projects/abc" should still highlight "Projects".
@@ -55,5 +56,9 @@ export function NavLinkList({ pathname = null, session = loadingSession, onNavig
 export default function NavLinks() {
   const pathname = usePathname();
   const session = useSession();
+  // Opening another page retries a session check that failed (Codex review, PR #21).
+  useEffect(() => {
+    recheckIfFailed();
+  }, [pathname]);
   return <NavLinkList pathname={pathname} session={session} />;
 }
