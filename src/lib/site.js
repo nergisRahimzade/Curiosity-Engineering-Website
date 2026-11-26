@@ -25,3 +25,12 @@ export const navLinks = [
 // The footer adds "Log in". Officers reach /officer after logging in, so
 // there's no public link to it.
 export const footerLinks = [...navLinks, { href: "/login", label: "Log in" }];
+
+// W2D3-FE: where each role goes after logging in (architecture doc, "Pages
+// and routes"). The login page's success button reads this, and the W2D5
+// navbar can too. /dashboard is built later in the plan, so until then the
+// member link shows the 404 page.
+export const roleHome = {
+  officer: { href: "/officer", label: "Go to officer home" },
+  member: { href: "/dashboard", label: "Go to your dashboard" },
+};

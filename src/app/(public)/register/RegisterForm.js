@@ -10,25 +10,10 @@ import Link from "next/link";
 import Button from "@/components/Button";
 import FormField from "@/components/FormField";
 import { registerSchema } from "@/lib/validation";
+import { firstInvalidField, issuesToErrors } from "@/lib/form-errors";
 
 // Fields in the order they appear, so focus goes to the first one that's wrong.
 const FIELDS = ["name", "email", "password"];
-
-// Turn Zod issues ([{ path: ["email"], message }]) into { email: "message" }.
-// The browser check and the API both return this shape, so one helper reads both.
-// Only the first message per field is kept: one clear problem at a time.
-function issuesToErrors(issues = []) {
-  const errors = {};
-  for (const issue of issues) {
-    const field = issue.path?.[0];
-    if (FIELDS.includes(field) && !errors[field]) errors[field] = issue.message;
-  }
-  return errors;
-}
-
-function firstInvalidField(fieldErrors) {
-  return FIELDS.find((field) => fieldErrors[field]);
-}
 
 export default function RegisterForm() {
   const [values, setValues] = useState({ name: "", email: "", password: "" });
@@ -99,7 +84,7 @@ export default function RegisterForm() {
 
   function showFieldErrors(fieldErrors) {
     setErrors(fieldErrors);
-    moveFocusTo(firstInvalidField(fieldErrors));
+    moveFocusTo(firstInvalidField(fieldErrors, FIELDS));
   }
 
   // A problem that isn't tied to one field. Focus moves to the message, and
@@ -119,7 +104,7 @@ export default function RegisterForm() {
     // 1. Check in the browser first: instant messages, no wasted request.
     const check = registerSchema.safeParse(values);
     if (!check.success) {
-      showFieldErrors(issuesToErrors(check.error.issues));
+      showFieldErrors(issuesToErrors(check.error.issues, FIELDS));
       return;
     }
 
@@ -162,8 +147,8 @@ export default function RegisterForm() {
     setStatus("idle");
 
     if (response.status === 400 && data.errors) {
-      const fieldErrors = issuesToErrors(data.errors);
-      if (firstInvalidField(fieldErrors)) {
+      const fieldErrors = issuesToErrors(data.errors, FIELDS);
+      if (firstInvalidField(fieldErrors, FIELDS)) {
         showFieldErrors(fieldErrors);
         return;
       }
