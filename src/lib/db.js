@@ -29,3 +29,13 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
+
+// W2D5-BE: the one copy of the "is DATABASE_URL set?" check. Without a URL,
+// the PostgreSQL driver silently connects to localhost instead. Call it inside
+// a request, never at import, so `next build` works without secrets.
+// Logs once and returns true when it's missing; the caller answers with a 500.
+export function databaseUrlMissing(where) {
+  if (process.env.DATABASE_URL?.trim()) return false;
+  console.error(`${where}: DATABASE_URL is not set`);
+  return true;
+}
