@@ -3,7 +3,7 @@
 
 **Branch:** `W2D2-FE` (from `main` @ `379ea5d`, which includes W2D1-FE and W2D2-BE)
 **Plan task:** "Register page with form validation and error messages"
-**Status:** Code done, lint passes, browser-checked against mocked API replies. `npm run build` still needs to run on a Mac (see Verification). Not committed yet.
+**Status:** Committed as `ddf2ea9`. `npm run lint` and `npm run build` pass (build run on a Mac after `npx prisma generate`). Browser-checked against mocked API replies. Waiting for review.
 
 ## What's done
 
