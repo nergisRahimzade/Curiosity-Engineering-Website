@@ -5,7 +5,7 @@
 // POST /api/auth/register, and shows the plan's three form states:
 // sending, success and error.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/Button";
 import FormField from "@/components/FormField";
@@ -26,6 +26,10 @@ function issuesToErrors(issues = []) {
   return errors;
 }
 
+function firstInvalidField(fieldErrors) {
+  return FIELDS.find((field) => fieldErrors[field]);
+}
+
 export default function RegisterForm() {
   const [values, setValues] = useState({ name: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -34,14 +38,57 @@ export default function RegisterForm() {
   // Problems that aren't about one field (server down, no network).
   const [formError, setFormError] = useState("");
   const [user, setUser] = useState(null);
+  // Where focus should go after React has drawn the next screen:
+  // { target: "name" | "email" | "password" | "formError" | "success", count }.
+  // count changes on every request, so the same target can be focused again.
+  const [focusRequest, setFocusRequest] = useState(null);
 
   const nameRef = useRef(null);
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const formErrorRef = useRef(null);
   const successRef = useRef(null);
+  // A ref, not state: it updates instantly, so a second Enter or click in
+  // the same moment can't slip past before React re-renders.
+  const sendingRef = useRef(false);
+  // Whether the form is on screen. Next.js keeps a page alive but hidden
+  // after you navigate away (cacheComponents), and runs effect cleanups then.
+  const visibleRef = useRef(false);
+  // The last focus request already carried out, so showing the page again
+  // doesn't replay an old one.
+  const handledFocusRef = useRef(0);
 
   const sending = status === "sending";
+
+  // Effects run after React has put the new elements on the page, so the
+  // field, error message or heading exists and can take focus.
+  useEffect(() => {
+    if (!focusRequest || focusRequest.count === handledFocusRef.current) return;
+    handledFocusRef.current = focusRequest.count;
+    const targets = {
+      name: nameRef,
+      email: emailRef,
+      password: passwordRef,
+      formError: formErrorRef,
+      success: successRef,
+    };
+    targets[focusRequest.target]?.current?.focus();
+  }, [focusRequest]);
+
+  // Track whether the form is on screen (see visibleRef above).
+  useEffect(() => {
+    visibleRef.current = true;
+    return () => {
+      visibleRef.current = false;
+    };
+  }, []);
+
+  function moveFocusTo(target) {
+    // A reply that arrives after the visitor left must not pull focus when
+    // they come back. The message is still shown; only focus stays put.
+    if (!visibleRef.current) return;
+    setFocusRequest((current) => ({ target, count: (current?.count ?? 0) + 1 }));
+  }
 
   function update(event) {
     const { name, value } = event.target;
@@ -50,40 +97,38 @@ export default function RegisterForm() {
     if (errors[name]) setErrors((current) => ({ ...current, [name]: undefined }));
   }
 
-  // Move focus to the first invalid field, so keyboard and screen reader
-  // users land on the problem (plan: "Moving focus").
-  function focusFirstError(fieldErrors) {
-    const refs = { name: nameRef, email: emailRef, password: passwordRef };
-    const first = FIELDS.find((field) => fieldErrors[field]);
-    // Wait one frame: after a server reply the fields are still disabled
-    // from "sending" until React re-renders, and disabled fields can't take focus.
-    requestAnimationFrame(() => refs[first]?.current?.focus());
+  function showFieldErrors(fieldErrors) {
+    setErrors(fieldErrors);
+    moveFocusTo(firstInvalidField(fieldErrors));
   }
 
-  // Show a problem that isn't tied to one field and move focus to it.
-  // requestAnimationFrame waits until the message is on the page.
+  // A problem that isn't tied to one field. Focus moves to the message, and
+  // that's how screen readers hear it (no role="alert", which would say it twice).
   function showFormError(message) {
     setFormError(message);
-    requestAnimationFrame(() => formErrorRef.current?.focus());
+    moveFocusTo("formError");
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (sending) return; // A double click shouldn't send twice.
+    // Blocks double clicks, a second Enter and Space on the button.
+    if (sendingRef.current) return;
 
     setFormError("");
 
     // 1. Check in the browser first: instant messages, no wasted request.
     const check = registerSchema.safeParse(values);
     if (!check.success) {
-      const fieldErrors = issuesToErrors(check.error.issues);
-      setErrors(fieldErrors);
-      focusFirstError(fieldErrors);
+      showFieldErrors(issuesToErrors(check.error.issues));
       return;
     }
 
     setErrors({});
     setStatus("sending");
+    sendingRef.current = true;
+    // The request isn't cancelled if the visitor leaves: cancelling can't undo
+    // an account the server already made, and the result should still show
+    // if they come back to this page.
 
     // 2. Send it. The server checks everything again: the browser check is
     //    only for convenience, anyone can skip it.
@@ -95,18 +140,22 @@ export default function RegisterForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
+      // An error page from the host (HTML or empty) isn't JSON; treat it as no details.
       data = await response.json().catch(() => ({}));
     } catch {
+      sendingRef.current = false;
       setStatus("idle");
       showFormError("We couldn't reach the server. Check your connection and try again.");
       return;
     }
 
+    sendingRef.current = false;
+
     // 3. Show what happened.
     if (response.status === 201) {
       setUser(data.user);
       setStatus("success");
-      requestAnimationFrame(() => successRef.current?.focus());
+      moveFocusTo("success");
       return;
     }
 
@@ -114,18 +163,15 @@ export default function RegisterForm() {
 
     if (response.status === 400 && data.errors) {
       const fieldErrors = issuesToErrors(data.errors);
-      if (Object.keys(fieldErrors).length > 0) {
-        setErrors(fieldErrors);
-        focusFirstError(fieldErrors);
+      if (firstInvalidField(fieldErrors)) {
+        showFieldErrors(fieldErrors);
         return;
       }
     }
 
     if (response.status === 409) {
       // The email is taken: put the message on the email field itself.
-      const fieldErrors = { email: data.error ?? "An account with this email already exists." };
-      setErrors(fieldErrors);
-      focusFirstError(fieldErrors);
+      showFieldErrors({ email: data.error ?? "An account with this email already exists." });
       return;
     }
 
@@ -163,13 +209,14 @@ export default function RegisterForm() {
         <p
           ref={formErrorRef}
           tabIndex={-1}
-          role="alert"
           className="rounded-md border border-danger bg-danger/5 px-4 py-3 text-sm text-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {formError}
         </p>
       )}
 
+      {/* readOnly, not disabled, while sending: a disabled field drops keyboard
+          focus to the page, which happens when someone presses Enter in it. */}
       <FormField
         ref={nameRef}
         label="Name"
@@ -179,7 +226,7 @@ export default function RegisterForm() {
         value={values.name}
         onChange={update}
         error={errors.name}
-        disabled={sending}
+        readOnly={sending}
       />
       <FormField
         ref={emailRef}
@@ -191,7 +238,7 @@ export default function RegisterForm() {
         value={values.email}
         onChange={update}
         error={errors.email}
-        disabled={sending}
+        readOnly={sending}
       />
       <FormField
         ref={passwordRef}
@@ -205,28 +252,30 @@ export default function RegisterForm() {
         value={values.password}
         onChange={update}
         error={errors.password}
-        disabled={sending}
+        readOnly={sending}
       />
 
       <div className="flex flex-wrap items-center gap-4">
-        {/* aria-disabled instead of disabled keeps focus on the button while it sends. */}
+        {/* The label stays the same so a focused button isn't re-announced.
+            aria-disabled only greys it out; sendingRef is what blocks a resend. */}
         <Button type="submit" aria-disabled={sending || undefined}>
-          {sending ? "Creating account…" : "Create account"}
+          Create account
         </Button>
-        <p className="text-sm text-muted">
-          Already a member?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-foreground underline underline-offset-4 hover:text-accent"
-          >
-            Log in
-          </Link>
+        {/* The one "sending" announcement: visible text in a status region,
+            read politely without moving focus. */}
+        <p role="status" className="text-sm text-muted">
+          {sending ? "Creating your account…" : ""}
         </p>
       </div>
 
-      {/* Announces "sending" without moving focus. */}
-      <p role="status" className="sr-only">
-        {sending ? "Creating your account…" : ""}
+      <p className="text-sm text-muted">
+        Already a member?{" "}
+        <Link
+          href="/login"
+          className="font-medium text-foreground underline underline-offset-4 hover:text-accent"
+        >
+          Log in
+        </Link>
       </p>
     </form>
   );
