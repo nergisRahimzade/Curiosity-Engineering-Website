@@ -11,6 +11,7 @@ import Link from "next/link";
 import Button from "@/components/Button";
 import FormField from "@/components/FormField";
 import { firstInvalidField, issuesToErrors } from "@/lib/form-errors";
+import { refreshSession } from "@/lib/session";
 import { roleHome } from "@/lib/site";
 import { loginSchema } from "@/lib/validation";
 
@@ -141,6 +142,9 @@ export default function LoginForm() {
 
     // 3. Show what happened.
     if (response.ok && data.user) {
+      // W2D5-FE: the navbar asks /api/auth/me again, so it shows this
+      // user's links straight away instead of the visitor ones.
+      refreshSession();
       setUser(data.user);
       setStatus("success");
       moveFocusTo("success");
