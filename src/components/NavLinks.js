@@ -1,8 +1,16 @@
 "use client";
 
+// The navbar's links. W2D5-FE: the list now depends on who is logged in
+// (src/lib/session.js): visitors get "Join" and "Log in", members get
+// "Dashboard", officers get "Dashboard" and "Officer", and anyone logged in
+// gets a "Log out" button.
+
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navLinks } from "@/lib/site";
+import LogoutButton from "@/components/LogoutButton";
+import { loadingSession, recheckIfFailed, useSession } from "@/lib/session";
+import { navLinksFor } from "@/lib/site";
 
 // "/projects/abc" should still highlight "Projects".
 function isActive(pathname, href) {
@@ -10,10 +18,12 @@ function isActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function NavLinkList({ pathname = null, onNavigate }) {
+// Draws the list for a given path and session. With no session (the
+// navbar's Suspense fallback), it shows the public links only.
+export function NavLinkList({ pathname = null, session = loadingSession, onNavigate }) {
   return (
     <ul className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-6">
-      {navLinks.map(({ href, label }) => {
+      {navLinksFor(session).map(({ href, label }) => {
         const active = pathname !== null && isActive(pathname, href);
         return (
           <li key={href}>
@@ -32,13 +42,23 @@ export function NavLinkList({ pathname = null, onNavigate }) {
           </li>
         );
       })}
+      {session.status === "user" && (
+        <li>
+          <LogoutButton onLoggedOut={onNavigate} />
+        </li>
+      )}
     </ul>
   );
 }
 
-// Reads the current path to mark the active link. Kept in its own
-// client component so the rest of the navbar stays a server component.
+// Reads the current path (to mark the active link) and the session. Kept in
+// its own client component so the rest of the navbar stays a server component.
 export default function NavLinks() {
   const pathname = usePathname();
-  return <NavLinkList pathname={pathname} />;
+  const session = useSession();
+  // Opening another page retries a session check that failed (Codex review, PR #21).
+  useEffect(() => {
+    recheckIfFailed();
+  }, [pathname]);
+  return <NavLinkList pathname={pathname} session={session} />;
 }

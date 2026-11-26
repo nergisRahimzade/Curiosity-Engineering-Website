@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { NavLinkList } from "@/components/NavLinks";
+import { useSession } from "@/lib/session";
 
 // Small-screen menu: a single toggle button that reveals the nav links.
 // Hidden from sm (640px) up, where the inline links take over.
 export default function MobileMenu() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // W2D5-FE: same links by role as the desktop navbar (one shared request).
+  const session = useSession();
 
   return (
     <div className="sm:hidden">
@@ -30,7 +33,11 @@ export default function MobileMenu() {
           aria-label="Main"
           className="absolute inset-x-0 top-full z-10 border-b border-line bg-background px-6 pb-4"
         >
-          <NavLinkList pathname={pathname} onNavigate={() => setOpen(false)} />
+          <NavLinkList
+            pathname={pathname}
+            session={session}
+            onNavigate={() => setOpen(false)}
+          />
         </nav>
       )}
     </div>

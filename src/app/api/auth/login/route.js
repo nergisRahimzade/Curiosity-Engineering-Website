@@ -7,7 +7,7 @@ import {
   signToken,
   verifyPassword,
 } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { databaseUrlMissing, prisma } from "@/lib/db";
 import { loginSchema } from "@/lib/validation";
 
 // One answer for "no such email" and "wrong password", so a stranger can't use
@@ -21,10 +21,7 @@ export async function POST(request) {
     return Response.json(CROSS_SITE, { status: 403 });
   }
 
-  // Same check as registration: without a URL, the PostgreSQL driver can
-  // silently connect to localhost instead.
-  if (!process.env.DATABASE_URL?.trim()) {
-    console.error("POST /api/auth/login: DATABASE_URL is not set");
+  if (databaseUrlMissing("POST /api/auth/login")) {
     return Response.json(SERVER_ERROR, { status: 500 });
   }
 
