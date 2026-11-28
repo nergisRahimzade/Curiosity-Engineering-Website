@@ -1,7 +1,10 @@
+// Projects grid for /projects. Added in setup; W3D1-FE links cards to
+// /projects/[id], uses h2 titles and shows only public fields.
 import Image from "next/image";
+import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
-import { getProjects, isUsingSampleData } from "@/lib/projects";
+import { getPublicProjects, isUsingSampleData } from "@/lib/projects";
 
 const gridClass = "grid gap-6 sm:grid-cols-2 lg:grid-cols-3";
 
@@ -10,7 +13,7 @@ const gridClass = "grid gap-6 sm:grid-cols-2 lg:grid-cols-3";
 export default async function ProjectGrid() {
   let projects;
   try {
-    projects = await getProjects();
+    projects = await getPublicProjects();
   } catch (error) {
     console.error(error);
     return <ProjectsError />;
@@ -20,7 +23,7 @@ export default async function ProjectGrid() {
 
   // Only reserve an image area when at least one project has a photo, so
   // a list with no photos doesn't fill up with empty grey boxes.
-  const showMedia = projects.some((p) => p.photoUrl);
+  const showMedia = projects.some((p) => p.imageUrl);
 
   return (
     <>
@@ -37,18 +40,20 @@ export default async function ProjectGrid() {
 }
 
 function ProjectCard({ project: p, showMedia, priority }) {
-  const footer = [p.lead && `Lead: ${p.lead}`, p.team && `Team: ${p.team}`]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
     <Card
-      href={`/projects/${p.slug}`}
+      href={`/projects/${p.id}`}
+      // W3D1-FE: h2, because the cards sit straight under the page's h1
+      // (axe heading-order). Card's default stays h3 for sections like the
+      // Home page's "Featured projects" h2.
+      titleAs="h2"
       media={
         showMedia &&
-        (p.photoUrl ? (
+        (p.imageUrl ? (
+          // alt="" because the card title right below already names the
+          // project; repeating it would make screen readers say it twice.
           <Image
-            src={p.photoUrl}
+            src={p.imageUrl}
             alt=""
             width={800}
             height={600}
@@ -60,23 +65,23 @@ function ProjectCard({ project: p, showMedia, priority }) {
           <div aria-hidden="true" className="h-full w-full" />
         ))
       }
-      eyebrow={
-        (p.dateLabel || p.openToJoin) && (
-          <span className="flex items-center justify-between gap-3">
-            <span>{p.dateLabel}</span>
-            {p.openToJoin && (
-              <span className="-my-1 rounded-full border border-accent px-2 py-0.5 leading-4 font-medium text-accent">
-                Open to join
-              </span>
-            )}
-          </span>
-        )
-      }
+      eyebrow={p.dateLabel || null}
       title={p.title}
-      footer={footer || null}
+      footer={p.statusLabel && <ProjectStatus label={p.statusLabel} />}
     >
       {p.summary}
     </Card>
+  );
+}
+
+// The status as a text label ("Active", "Completed"), never colour alone.
+// Status is free text for now, so every value gets the neutral tone.
+export function ProjectStatus({ label, className = "" }) {
+  return (
+    <Badge className={className}>
+      <span className="sr-only">Status: </span>
+      {label}
+    </Badge>
   );
 }
 
@@ -116,10 +121,11 @@ function ProjectsError() {
 }
 
 // Visible on purpose, so nobody mistakes sample data for real projects.
-// Remove it when getProjects() reads from the database (W3D1-BE).
-function SampleDataNotice() {
+// Shown on the list and detail pages while isUsingSampleData is true; it
+// disappears by itself when W3D1-BE switches projects.js to the database.
+export function SampleDataNotice({ className = "mb-6" }) {
   return (
-    <p className="mb-6 rounded-md border border-line px-4 py-3 text-sm text-muted">
+    <p className={`rounded-md border border-line px-4 py-3 text-sm text-muted ${className}`}>
       Showing sample projects. Real projects will load from the club
       database once it is connected.
     </p>

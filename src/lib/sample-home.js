@@ -1,6 +1,6 @@
 // W2D4-FE: placeholder events for the Home page. Replaced by the events API
 // in W3D4-FE. Projects are NOT here: the Home page reads them from
-// getProjects() in src/lib/projects.js, like the /projects page does.
+// getPublicProjects() in src/lib/projects.js, like the /projects page does.
 //
 // Only startsAt is stored; the page formats it. Dates are in January so they
 // are still upcoming at the Jan 4 deadline. "type" uses the plan's event

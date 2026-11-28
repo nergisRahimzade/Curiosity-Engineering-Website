@@ -1,11 +1,11 @@
-// Home page (/). Added in W2D4-FE. Featured projects come from getProjects()
+// Home page (/). Added in W2D4-FE. Featured projects come from getPublicProjects()
 // (the same data layer as /projects); events are still placeholder data.
 import Link from "next/link";
 import Badge from "@/components/Badge";
 import Button from "@/components/Button";
 import Card from "@/components/Card";
 import Container from "@/components/Container";
-import { getProjects, isUsingSampleData } from "@/lib/projects";
+import { getPublicProjects, isUsingSampleData } from "@/lib/projects";
 import { nextEvents } from "@/lib/sample-home";
 import { site } from "@/lib/site";
 
@@ -32,7 +32,7 @@ export default async function HomePage() {
   // instead of breaking the whole Home page.
   let featured = [];
   try {
-    featured = (await getProjects()).slice(0, 3);
+    featured = (await getPublicProjects()).slice(0, 3);
   } catch (error) {
     console.error(error);
   }
@@ -68,11 +68,12 @@ export default async function HomePage() {
           <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((p) => (
               <li key={p.id}>
-                {/* Detail pages come in W3D1-FE; then this becomes `/projects/${p.slug}`. */}
+                {/* W3D1-FE: links to the project's page. The team line was
+                    removed (names are membership data; see projects.js). */}
                 <Card
-                  href="/projects"
+                  href={`/projects/${p.id}`}
+                  eyebrow={p.dateLabel || null}
                   title={p.title}
-                  footer={p.team && `Team: ${p.team}`}
                 >
                   {p.summary}
                 </Card>

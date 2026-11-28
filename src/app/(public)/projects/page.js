@@ -1,3 +1,5 @@
+// Projects list page (/projects). Added in setup; finished in W3D1-FE.
+// A server component: the cards are built on the server from projects.js.
 import { Suspense } from "react";
 import Container from "@/components/Container";
 import ProjectGrid, {
@@ -15,8 +17,7 @@ export default function ProjectsPage() {
       <h1 className="text-3xl font-semibold tracking-tight">Projects</h1>
       <p className="mt-4 max-w-xl text-muted">
         What club members have built, tested and taken to competitions.
-        Projects marked <span className="text-foreground">Open to join</span>{" "}
-        are looking for new members.
+        Open a project to read more about it.
       </p>
 
       <div className="mt-10">
